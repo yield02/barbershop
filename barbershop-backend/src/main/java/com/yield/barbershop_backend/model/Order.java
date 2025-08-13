@@ -1,0 +1,46 @@
+package com.yield.barbershop_backend.model;
+
+import java.sql.Date;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import lombok.Data;
+
+@Entity(name = "orders")
+@Data
+public class Order {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long orderId;
+    private String customerName;
+    private String customerPhone;
+    private String customerEmail;
+    private Date orderTime;
+    private Double totalAmount;
+    private String paymentMethod;
+    private String status;
+    private String notes;
+    private Date createdAt;
+    private Date updatedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @OneToMany(mappedBy = "order")
+    @JsonManagedReference
+    private List<Orderitem> orderItems;
+}
