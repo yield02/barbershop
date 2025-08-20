@@ -2,7 +2,6 @@ package com.yield.barbershop_backend.model;
 
 import java.sql.Date;
 
-import jakarta.annotation.Generated;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;

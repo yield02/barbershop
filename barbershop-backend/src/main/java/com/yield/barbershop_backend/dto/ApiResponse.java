@@ -21,7 +21,7 @@ public class ApiResponse<T> {
     public ApiResponse(Boolean success, String message, T data) {
         this();
         this.success = success;
-        this.message = message;
+        this.message = message.isEmpty() ?  "Thành công" :  message;
         this.data = data;
     }
 

@@ -10,6 +10,6 @@ import com.yield.barbershop_backend.model.Order;
 @Repository
 public interface OrderRepo extends JpaRepository<Order, Long> {
 
-    Optional findById(Long id);
+    Optional<Order> findById(Long id);
     
 } 

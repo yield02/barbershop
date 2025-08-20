@@ -2,14 +2,21 @@ package com.yield.barbershop_backend.model;
 
 import java.sql.Date;
 
+import com.yield.barbershop_backend.dto.DrinkDTO;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity(name="drinks")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Drink {
 
 
@@ -24,8 +31,39 @@ public class Drink {
     private Double alcoholPercentage;
     private String imageUrl;
     private Boolean isActive;
+
+    @Column(updatable = false)
     private Date createdAt;
     private Date updatedAt;
+
+    public Drink(DrinkDTO drink) {
+
+        this.drinkName = drink.getDrinkName();
+        this.description = drink.getDescription();
+        this.price = drink.getPrice();
+        this.stockQuantity = drink.getStockQuantity();
+        this.category = drink.getCategory();
+        this.alcoholPercentage = drink.getAlcoholPercentage();
+        this.imageUrl = drink.getImageUrl();
+        this.isActive = drink.getIsActive();
+        this.createdAt = new Date(System.currentTimeMillis());
+        this.updatedAt = new Date(System.currentTimeMillis());
+    
+    }
+
+    public Drink(Long drinkId, DrinkDTO drink) {
+        this.drinkId = drinkId;
+        this.drinkName = drink.getDrinkName();
+        this.description = drink.getDescription();
+        this.price = drink.getPrice();
+        this.stockQuantity = drink.getStockQuantity();
+        this.category = drink.getCategory();
+        this.alcoholPercentage = drink.getAlcoholPercentage();
+        this.imageUrl = drink.getImageUrl();
+        this.isActive = drink.getIsActive();
+        this.createdAt = new Date(System.currentTimeMillis());
+        this.updatedAt = new Date(System.currentTimeMillis());
+    }
 
 }
 
