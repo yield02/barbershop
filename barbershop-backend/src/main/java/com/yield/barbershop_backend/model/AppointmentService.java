@@ -1,5 +1,13 @@
 package com.yield.barbershop_backend.model;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.yield.barbershop_backend.dto.AppointmentFilterDTO;
+import com.yield.barbershop_backend.specification.AppointmentSpecification;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -8,7 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Data;
 
-@Entity(name = "appointment_services")
+@Entity(name = "appointmentservices")
 @Data
 public class AppointmentService {
 
@@ -19,6 +27,7 @@ public class AppointmentService {
 
     @ManyToOne
     @JoinColumn(name = "appointment_id", insertable = false, updatable = false)
+    @JsonBackReference
     private Appointment appointment;
 
     @ManyToOne   

@@ -1,13 +1,20 @@
 package com.yield.barbershop_backend.model;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
+import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import lombok.Data;
 
 @Entity(name = "appointments")
@@ -23,12 +30,16 @@ public class Appointment {
     private String customerEmail;
 
 
-    private Date appointmentTime;
+    private LocalDateTime appointmentTime;
     private String status;
     private String notes;
     private Double totalAmount;
     private Date createdAt;
     private Date updatedAt;
+
+    @JsonIgnore
+    @Column(name = "user_id")
+    private Long userId;
 
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
@@ -37,6 +48,10 @@ public class Appointment {
     @ManyToOne
     @JoinColumn(name = "customer_id", insertable = false, updatable = false)
     private Customer customer;
+
+    @OneToMany(mappedBy = "appointment")
+    @JsonManagedReference
+    private List<AppointmentService> appointmentServices;
 
 }
 

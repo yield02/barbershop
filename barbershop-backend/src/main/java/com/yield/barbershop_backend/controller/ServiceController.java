@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.yield.barbershop_backend.model.Service;
 
 import com.yield.barbershop_backend.dto.ApiResponse;
+import com.yield.barbershop_backend.dto.PagedResponse;
 import com.yield.barbershop_backend.dto.ServiceDTO;
 import com.yield.barbershop_backend.dto.ServiceFilterDTO;
 import com.yield.barbershop_backend.service.ServiceService;
@@ -16,7 +17,6 @@ import com.yield.barbershop_backend.service.ServiceService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,11 +33,11 @@ public class ServiceController {
 
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<List<Service>>> getServicesWithFilter(ServiceFilterDTO filter) {
+    public ResponseEntity<ApiResponse<PagedResponse<Service>>> getServicesWithFilter(ServiceFilterDTO filter) {
         return ResponseEntity.ok(new ApiResponse<>(
-            true, 
-            "Services fetched successfully", 
-            serviceService.getServicesWithFilter(filter).toList()
+            true,
+            "Services fetched successfully",
+            new PagedResponse<>(serviceService.getServicesWithFilter(filter))
         ));
     }
     

@@ -7,6 +7,7 @@ import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.DrinkDTO;
 import com.yield.barbershop_backend.dto.DrinkFilterDTO;
 import com.yield.barbershop_backend.dto.ItemStockQuantityDTO;
+import com.yield.barbershop_backend.dto.PagedResponse;
 import com.yield.barbershop_backend.model.Drink;
 import com.yield.barbershop_backend.service.DrinkService;
 
@@ -34,22 +35,13 @@ public class DrinkController {
 
     @Autowired
     private DrinkService drinkService;
-
-
-// Lấy danh sách tất cả đồ uống (có phân trang, lọc, tìm kiếm):
-// GET /api/drinks
-// Query parameters (tùy chọn):
-// page: Số trang
-// size: Số lượng đồ uống trên mỗi trang
-// category: Lọc theo danh mục đồ uống
-// search: Tìm kiếm theo tên đồ uống
-// isActive: Lọc theo trạng thái hoạt động (true/false)
+    
     @GetMapping("")
-    public ResponseEntity<ApiResponse<List<Drink>>> getDrinksByFilter (DrinkFilterDTO filter) {
+    public ResponseEntity<ApiResponse<PagedResponse<Drink>>> getDrinksByFilter (DrinkFilterDTO filter) {
         return ResponseEntity.ok(new ApiResponse<>(
             true,
             "",
-            drinkService.getDrinksByFilter(filter).toList()
+            new PagedResponse<Drink>(drinkService.getDrinksByFilter(filter))
         ));
     }
     

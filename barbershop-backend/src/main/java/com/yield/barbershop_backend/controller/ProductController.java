@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.ItemStockQuantityDTO;
+import com.yield.barbershop_backend.dto.PagedResponse;
 import com.yield.barbershop_backend.dto.ProductDTO;
 import com.yield.barbershop_backend.dto.ProductFilterDTO;
 import com.yield.barbershop_backend.model.Product;
@@ -47,14 +48,14 @@ public class ProductController {
     }
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<List<Product>>> getProductsByFilter(ProductFilterDTO filter) {
+    public ResponseEntity<ApiResponse<PagedResponse<Product>>> getProductsByFilter(ProductFilterDTO filter) {
 
         System.out.println("Filter: " + filter);
 
-        return ResponseEntity.ok(new ApiResponse<List<Product>>(
+        return ResponseEntity.ok(new ApiResponse<PagedResponse<Product>>(
             true,
             "",
-            productService.getProductsByFilter(filter).toList()
+            new PagedResponse<>(productService.getProductsByFilter(filter))
         ));
     }
     
