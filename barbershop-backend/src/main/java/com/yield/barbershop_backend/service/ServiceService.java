@@ -1,6 +1,10 @@
 package com.yield.barbershop_backend.service;
 
 
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,6 +16,8 @@ import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.Service;
 import com.yield.barbershop_backend.repository.ServiceRepo;
 import com.yield.barbershop_backend.specification.ServiceSpecification;
+
+import jakarta.transaction.Transactional;
 
 @org.springframework.stereotype.Service
 public class ServiceService {
@@ -42,5 +48,15 @@ public class ServiceService {
     public Service updateService(Long serviceId, ServiceDTO service) {
         return serviceRepo.save(new Service(serviceId, service));
     }
+
+    public List<Service> findExistedServiceIds(List<Long> serviceIds) {
+        if (serviceIds == null || serviceIds.isEmpty()) {
+            return List.of();
+        }
+        // Truy vấn 1 lần duy nhất tất cả các id tồn tại
+        List<Service> existedIds = serviceRepo.findExistedIds(serviceIds);
+        return existedIds;
+    }
+
 
 }

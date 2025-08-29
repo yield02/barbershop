@@ -32,6 +32,11 @@ public class GlobalControllerExceptionHandler {
         return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
     }
 
-    
+    @ExceptionHandler(DataConflictException.class)
+    public ResponseEntity<ApiResponse<ErrorDetail>> handleDataConflictException(DataConflictException e) {
+        ErrorDetail errorDetail = new ErrorDetail("DATA_CONFLICT", e.getMessage(), e.getDetails());
+        ApiResponse<ErrorDetail> apiResponse = new ApiResponse<>(false, "Data Conflict", errorDetail);
+        return new ResponseEntity<>(apiResponse, HttpStatus.CONFLICT);
+    }
 
 }

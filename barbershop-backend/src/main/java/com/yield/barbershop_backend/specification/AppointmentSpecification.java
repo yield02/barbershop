@@ -1,5 +1,7 @@
 package com.yield.barbershop_backend.specification;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,11 +27,26 @@ public class AppointmentSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("status"), filter.getStatus()));
             }
 
-            if (filter.getAppointmentTime() != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("appointmentTime"), filter.getAppointmentTime()));
+            if (filter.getStartTime() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startTime"), filter.getStartTime()));
             }
-            
+
+            if (filter.getEndTime() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("endTime"), filter.getEndTime()));
+            }
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<Appointment> checkAppointmentsConflict(LocalDateTime startTime, LocalDateTime endTime, Long userId) {
+        return (root, query, criteriaBuilder) -> {
+            Predicate timeConflict = criteriaBuilder.and(
+                criteriaBuilder.greaterThan(root.get("endTime"), startTime),
+                criteriaBuilder.lessThan(root.get("startTime"), endTime),
+                criteriaBuilder.equal(root.get("userId"), userId)
+            );
+            return criteriaBuilder.and(timeConflict);
         };
     }
 

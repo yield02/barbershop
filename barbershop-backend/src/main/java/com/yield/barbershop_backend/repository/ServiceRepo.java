@@ -1,7 +1,10 @@
 package com.yield.barbershop_backend.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,6 +16,7 @@ JpaRepository<Service, Long>,
    PagingAndSortingRepository<Service, Long>, 
    JpaSpecificationExecutor<Service> 
 {
+   @Query("SELECT s FROM services s WHERE s.serviceId IN :serviceIds AND s.isActive = true")
+   List<Service> findExistedIds(List<Long> serviceIds);
 
-    
-} 
+}

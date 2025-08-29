@@ -15,7 +15,8 @@ public class AppointmentFilterDTO {
     
     private Long userId;
     private String status;
-    private LocalDateTime appointmentTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
     private Integer page = 0;
     private Integer pageSize = 10;
 

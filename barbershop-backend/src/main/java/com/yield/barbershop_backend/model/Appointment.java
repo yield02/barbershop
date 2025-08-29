@@ -30,16 +30,27 @@ public class Appointment {
     private String customerEmail;
 
 
-    private LocalDateTime appointmentTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+
     private String status;
+
+      
     private String notes;
     private Double totalAmount;
+
+    @Column(updatable = false)
     private Date createdAt;
+    
     private Date updatedAt;
 
     @JsonIgnore
     @Column(name = "user_id")
     private Long userId;
+
+    @JsonIgnore
+    @Column(name = "customer_id")
+    private Long customerId;
 
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)

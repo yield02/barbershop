@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.yield.barbershop_backend.dto.AppointmentFilterDTO;
 import com.yield.barbershop_backend.specification.AppointmentSpecification;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +25,12 @@ public class AppointmentService {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long appointmentServiceId;
     private Double price;
+
+    @Column(name = "appointment_id")
+    private Long appointmentId;
+
+    @Column(name = "service_id")
+    private Long serviceId;
 
     @ManyToOne
     @JoinColumn(name = "appointment_id", insertable = false, updatable = false)
