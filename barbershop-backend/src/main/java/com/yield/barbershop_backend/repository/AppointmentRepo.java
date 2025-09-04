@@ -1,5 +1,7 @@
 package com.yield.barbershop_backend.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -9,6 +11,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yield.barbershop_backend.model.Appointment;
+import java.util.List;
+
 
 @Repository
 public interface AppointmentRepo extends 
@@ -22,4 +26,6 @@ PagingAndSortingRepository<Appointment, Long>
     @Query("UPDATE appointments a SET a.paymentConfirmed = :paymentConfirmed WHERE a.appointmentId = :appointmentId")
     int updatePaymentConfirmedStatus(Long appointmentId, Boolean paymentConfirmed);
 
+
+    Optional<Appointment> findByAppointmentIdAndCustomerId(Long appointmentId, Long customerId);
 }

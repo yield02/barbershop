@@ -258,4 +258,25 @@ public class  AppointmentService {
         }
     }
 
+    public void cancelAppointment(Long appointmentId) {
+
+
+        Long currentCustomerId = 1L; // Replace with actual method to get current customer ID
+
+        Appointment appointment = appointmentRepo.findByAppointmentIdAndCustomerId(appointmentId, currentCustomerId)
+        .orElseThrow(() -> new DataNotFoundException("Appointment not found with id: " + appointmentId));
+
+
+        if (appointment.getStatus().equals("Cancelled")) {
+            throw new DataConflictException("Appointment is already cancelled");
+        }
+
+        if (appointment.getStatus().equals("Completed")) {
+            throw new DataConflictException("Cannot cancel a completed appointment");
+        }
+
+        appointment.setStatus("Cancelled");
+        appointmentRepo.save(appointment);
+    }
+
 }

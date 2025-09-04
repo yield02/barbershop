@@ -76,7 +76,11 @@ public class AppointmentController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{appointmentId}/")
+    @PatchMapping("/{appointmentId}/status/cancelled")
+    public ResponseEntity<ApiResponse<Void>> cancelAppointment(@PathVariable Long appointmentId) {
+        appointmentService.cancelAppointment(appointmentId);
+        return ResponseEntity.noContent().build();
+    }
 
     @DeleteMapping("/{appointmentId}")
     public ResponseEntity<ApiResponse<Void>> deleteAppointment(@PathVariable Long appointmentId) {
