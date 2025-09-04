@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.PagedResponse;
-import com.yield.barbershop_backend.dto.UserDTO;
-import com.yield.barbershop_backend.dto.UserFilterDTO;
+import com.yield.barbershop_backend.dto.user.UserDTO;
+import com.yield.barbershop_backend.dto.user.UserFilterDTO;
 import com.yield.barbershop_backend.model.User;
 import com.yield.barbershop_backend.service.UserService;
 import org.springframework.web.bind.annotation.PutMapping;

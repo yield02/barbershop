@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.yield.barbershop_backend.dto.AppointmentFilterDTO;
+import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
 import com.yield.barbershop_backend.model.Appointment;
 
 import jakarta.persistence.criteria.Predicate;

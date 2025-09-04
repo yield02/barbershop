@@ -9,9 +9,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.yield.barbershop_backend.dto.DrinkDTO;
-import com.yield.barbershop_backend.dto.DrinkFilterDTO;
 import com.yield.barbershop_backend.dto.ItemStockQuantityDTO;
+import com.yield.barbershop_backend.dto.drink.DrinkDTO;
+import com.yield.barbershop_backend.dto.drink.DrinkFilterDTO;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.Drink;
 import com.yield.barbershop_backend.repository.DrinkRepo;

@@ -1,4 +1,4 @@
-package com.yield.barbershop_backend.dto;
+package com.yield.barbershop_backend.dto.appointment;
 
 import java.lang.reflect.Array;
 import java.sql.Date;
@@ -9,7 +9,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,8 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
-public class UpdateAppointmentDTO {
+public class CreateAppointmentDTO {
 
     @NotNull(message = "User ID is required")
     private Long userId;
@@ -28,7 +26,6 @@ public class UpdateAppointmentDTO {
     private ArrayList<Long> serviceIds;
     @NotNull(message = "Notes are required")
     private String notes;
-    
     @Null
     private Date createdAt = new Date(System.currentTimeMillis());
     @Null

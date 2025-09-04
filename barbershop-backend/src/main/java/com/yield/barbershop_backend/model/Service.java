@@ -2,7 +2,7 @@ package com.yield.barbershop_backend.model;
 
 import java.sql.Date;
 
-import com.yield.barbershop_backend.dto.ServiceDTO;
+import com.yield.barbershop_backend.dto.service.ServiceDTO;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

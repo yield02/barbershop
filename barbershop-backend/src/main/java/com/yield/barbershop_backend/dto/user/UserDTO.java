@@ -1,4 +1,4 @@
-package com.yield.barbershop_backend.dto;
+package com.yield.barbershop_backend.dto.user;
 
 import java.sql.Date;
 

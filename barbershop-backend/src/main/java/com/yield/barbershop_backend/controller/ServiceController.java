@@ -10,8 +10,8 @@ import com.yield.barbershop_backend.model.Service;
 
 import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.PagedResponse;
-import com.yield.barbershop_backend.dto.ServiceDTO;
-import com.yield.barbershop_backend.dto.ServiceFilterDTO;
+import com.yield.barbershop_backend.dto.service.ServiceDTO;
+import com.yield.barbershop_backend.dto.service.ServiceFilterDTO;
 import com.yield.barbershop_backend.service.ServiceService;
 
 import org.springframework.web.bind.annotation.DeleteMapping;

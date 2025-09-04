@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.yield.barbershop_backend.dto.ServiceFilterDTO;
+import com.yield.barbershop_backend.dto.service.ServiceFilterDTO;
 import com.yield.barbershop_backend.model.Service;
 
 import jakarta.persistence.criteria.Predicate;

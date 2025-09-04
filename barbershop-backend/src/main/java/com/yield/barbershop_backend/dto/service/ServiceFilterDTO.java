@@ -1,4 +1,4 @@
-package com.yield.barbershop_backend.dto;
+package com.yield.barbershop_backend.dto.service;
 
 
 import lombok.AllArgsConstructor;

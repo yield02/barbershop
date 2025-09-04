@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.yield.barbershop_backend.dto.DrinkFilterDTO;
+import com.yield.barbershop_backend.dto.drink.DrinkFilterDTO;
 import com.yield.barbershop_backend.model.Drink;
 
 import jakarta.persistence.criteria.Predicate;

@@ -11,9 +11,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.yield.barbershop_backend.dto.AppointmentFilterDTO;
-import com.yield.barbershop_backend.dto.CreateAppointmentDTO;
-import com.yield.barbershop_backend.dto.UpdateAppointmentDTO;
+import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
+import com.yield.barbershop_backend.dto.appointment.CreateAppointmentDTO;
+import com.yield.barbershop_backend.dto.appointment.UpdateAppointmentDTO;
 import com.yield.barbershop_backend.exception.DataConflictException;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.Appointment;

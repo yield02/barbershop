@@ -8,8 +8,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.yield.barbershop_backend.dto.UserDTO;
-import com.yield.barbershop_backend.dto.UserFilterDTO;
+import com.yield.barbershop_backend.dto.user.UserDTO;
+import com.yield.barbershop_backend.dto.user.UserFilterDTO;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.User;
 import com.yield.barbershop_backend.repository.UserRepo;

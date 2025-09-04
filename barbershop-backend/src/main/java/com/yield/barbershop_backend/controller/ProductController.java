@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.ItemStockQuantityDTO;
 import com.yield.barbershop_backend.dto.PagedResponse;
-import com.yield.barbershop_backend.dto.ProductDTO;
-import com.yield.barbershop_backend.dto.ProductFilterDTO;
+import com.yield.barbershop_backend.dto.product.ProductDTO;
+import com.yield.barbershop_backend.dto.product.ProductFilterDTO;
 import com.yield.barbershop_backend.model.Product;
 import com.yield.barbershop_backend.service.ProductService;
 

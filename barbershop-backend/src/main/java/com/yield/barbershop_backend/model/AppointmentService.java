@@ -5,7 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.yield.barbershop_backend.dto.AppointmentFilterDTO;
+import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
 import com.yield.barbershop_backend.specification.AppointmentSpecification;
 
 import jakarta.persistence.Column;

@@ -4,10 +4,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yield.barbershop_backend.dto.ApiResponse;
-import com.yield.barbershop_backend.dto.DrinkDTO;
-import com.yield.barbershop_backend.dto.DrinkFilterDTO;
 import com.yield.barbershop_backend.dto.ItemStockQuantityDTO;
 import com.yield.barbershop_backend.dto.PagedResponse;
+import com.yield.barbershop_backend.dto.drink.DrinkDTO;
+import com.yield.barbershop_backend.dto.drink.DrinkFilterDTO;
 import com.yield.barbershop_backend.model.Drink;
 import com.yield.barbershop_backend.service.DrinkService;
 

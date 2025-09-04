@@ -10,8 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import com.yield.barbershop_backend.dto.ServiceDTO;
-import com.yield.barbershop_backend.dto.ServiceFilterDTO;
+import com.yield.barbershop_backend.dto.service.ServiceDTO;
+import com.yield.barbershop_backend.dto.service.ServiceFilterDTO;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.Service;
 import com.yield.barbershop_backend.repository.ServiceRepo;

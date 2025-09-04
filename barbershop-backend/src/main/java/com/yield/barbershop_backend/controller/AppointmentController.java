@@ -4,10 +4,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yield.barbershop_backend.dto.ApiResponse;
-import com.yield.barbershop_backend.dto.AppointmentFilterDTO;
-import com.yield.barbershop_backend.dto.CreateAppointmentDTO;
 import com.yield.barbershop_backend.dto.PagedResponse;
-import com.yield.barbershop_backend.dto.UpdateAppointmentDTO;
+import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
+import com.yield.barbershop_backend.dto.appointment.CreateAppointmentDTO;
+import com.yield.barbershop_backend.dto.appointment.UpdateAppointmentDTO;
 import com.yield.barbershop_backend.model.Appointment;
 import com.yield.barbershop_backend.service.AppointmentService;
 
