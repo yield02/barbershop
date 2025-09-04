@@ -7,6 +7,7 @@ import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.AppointmentFilterDTO;
 import com.yield.barbershop_backend.dto.CreateAppointmentDTO;
 import com.yield.barbershop_backend.dto.PagedResponse;
+import com.yield.barbershop_backend.dto.UpdateAppointmentDTO;
 import com.yield.barbershop_backend.model.Appointment;
 import com.yield.barbershop_backend.service.AppointmentService;
 
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
+
 
 
 
@@ -53,10 +56,21 @@ public class AppointmentController {
         ));
     }
 
+    @PutMapping("/{appointmentId}")
+    public ResponseEntity<ApiResponse<Appointment>> updateAppointment(@PathVariable Long appointmentId, @RequestBody UpdateAppointmentDTO appointment) {
+        Appointment updatedAppointment = appointmentService.updateAppointment(appointmentId, appointment);
+        return ResponseEntity.ok(new ApiResponse<>(
+            true,
+            "Appointment updated successfully",
+            updatedAppointment
+        ));
+    }
+
     @DeleteMapping("/{appointmentId}")
     public ResponseEntity<ApiResponse<Void>> deleteAppointment(@PathVariable Long appointmentId) {
         appointmentService.deleteAppointment(appointmentId);
         return ResponseEntity.noContent().build();
     }
+
 
 }

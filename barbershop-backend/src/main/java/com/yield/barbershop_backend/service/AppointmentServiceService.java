@@ -19,6 +19,10 @@ public class AppointmentServiceService {
     //     return appointmentServiceRepo.saveAll(null)
     // }
 
+    public void deleteAppointmentServicesByAppointmentId(Long appointmentId) {
+        appointmentServiceRepo.deleteAllByAppointmentId(appointmentId);
+    }
+
 
     public List<AppointmentService> createAppointmentServices(List<AppointmentService> appointmentServices) {
         return appointmentServiceRepo.saveAll(appointmentServices);
