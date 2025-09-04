@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
 import com.yield.barbershop_backend.dto.appointment.CreateAppointmentDTO;
 import com.yield.barbershop_backend.dto.appointment.UpdateAppointmentDTO;
+import com.yield.barbershop_backend.dto.appointment.UpdatePaymentConfirmedAppointmentDTO;
 import com.yield.barbershop_backend.dto.appointment.UpdateStatusAppointmentDTO;
 import com.yield.barbershop_backend.exception.DataConflictException;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
@@ -247,6 +248,14 @@ public class  AppointmentService {
         }
         appointment.setStatus(status.getStatus());
         appointmentRepo.save(appointment);
+    }
+
+
+    public void updatePaymentConfirmedStatus(Long appointmentId, UpdatePaymentConfirmedAppointmentDTO payment) {
+        int result = appointmentRepo.updatePaymentConfirmedStatus(appointmentId, payment.getPaymentConfirmed());
+        if (result == 0) {
+            throw new DataNotFoundException("Appointment not found with id: " + appointmentId);
+        }
     }
 
 }

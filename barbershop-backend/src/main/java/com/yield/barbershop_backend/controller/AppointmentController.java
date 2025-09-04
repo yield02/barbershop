@@ -8,6 +8,7 @@ import com.yield.barbershop_backend.dto.PagedResponse;
 import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
 import com.yield.barbershop_backend.dto.appointment.CreateAppointmentDTO;
 import com.yield.barbershop_backend.dto.appointment.UpdateAppointmentDTO;
+import com.yield.barbershop_backend.dto.appointment.UpdatePaymentConfirmedAppointmentDTO;
 import com.yield.barbershop_backend.dto.appointment.UpdateStatusAppointmentDTO;
 import com.yield.barbershop_backend.model.Appointment;
 import com.yield.barbershop_backend.service.AppointmentService;
@@ -69,11 +70,13 @@ public class AppointmentController {
         ));
     }
 
-    @PatchMapping("/{appointmentId}/status")
-    public ResponseEntity<ApiResponse<Void>> updateStatusAppointment(@PathVariable Long appointmentId, @RequestBody @Validated UpdateStatusAppointmentDTO status) {
-        appointmentService.updateStatusAppointment(appointmentId, status);
+    @PatchMapping("/{appointmentId}/payment-status")
+    public ResponseEntity<ApiResponse<Void>> updatePaymentConfirmedStatus(@PathVariable Long appointmentId, @RequestBody @Validated UpdatePaymentConfirmedAppointmentDTO payment) {
+        appointmentService.updatePaymentConfirmedStatus(appointmentId, payment);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{appointmentId}/")
 
     @DeleteMapping("/{appointmentId}")
     public ResponseEntity<ApiResponse<Void>> deleteAppointment(@PathVariable Long appointmentId) {
