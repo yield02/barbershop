@@ -8,13 +8,16 @@ import com.yield.barbershop_backend.dto.PagedResponse;
 import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
 import com.yield.barbershop_backend.dto.appointment.CreateAppointmentDTO;
 import com.yield.barbershop_backend.dto.appointment.UpdateAppointmentDTO;
+import com.yield.barbershop_backend.dto.appointment.UpdateStatusAppointmentDTO;
 import com.yield.barbershop_backend.model.Appointment;
 import com.yield.barbershop_backend.service.AppointmentService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,6 +67,12 @@ public class AppointmentController {
             "Appointment updated successfully",
             updatedAppointment
         ));
+    }
+
+    @PatchMapping("/{appointmentId}/status")
+    public ResponseEntity<ApiResponse<Void>> updateStatusAppointment(@PathVariable Long appointmentId, @RequestBody @Validated UpdateStatusAppointmentDTO status) {
+        appointmentService.updateStatusAppointment(appointmentId, status);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{appointmentId}")

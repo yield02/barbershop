@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
 import com.yield.barbershop_backend.dto.appointment.CreateAppointmentDTO;
 import com.yield.barbershop_backend.dto.appointment.UpdateAppointmentDTO;
+import com.yield.barbershop_backend.dto.appointment.UpdateStatusAppointmentDTO;
 import com.yield.barbershop_backend.exception.DataConflictException;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.Appointment;
@@ -236,6 +237,16 @@ public class  AppointmentService {
             List<Long> conflictIds = conflictingAppointments.stream().map(Appointment::getAppointmentId).collect(Collectors.toList());
             throw new DataConflictException("Appointment time conflicts with " + conflictIds, conflictIds);
         }
+    }
+
+    public void updateStatusAppointment(Long appointmentId, UpdateStatusAppointmentDTO status) {
+        Appointment appointment = getAppointmentById(appointmentId);
+
+        if (appointment.getStatus().equals("Cancelled") || appointment.getStatus().equals("Completed")) {
+            throw new DataConflictException("Cannot update status of appointment with status: " + appointment.getStatus());
+        }
+        appointment.setStatus(status.getStatus());
+        appointmentRepo.save(appointment);
     }
 
 }

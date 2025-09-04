@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.yield.barbershop_backend.dto.ItemStockQuantityDTO;
+import com.yield.barbershop_backend.dto.product.ItemStockQuantityDTO;
 import com.yield.barbershop_backend.dto.product.ProductDTO;
 import com.yield.barbershop_backend.dto.product.ProductFilterDTO;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
