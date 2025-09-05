@@ -12,7 +12,6 @@ import com.yield.barbershop_backend.model.Product;
 import com.yield.barbershop_backend.service.ProductService;
 
 import java.net.URI;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
