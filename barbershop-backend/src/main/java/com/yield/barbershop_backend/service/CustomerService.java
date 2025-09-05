@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.yield.barbershop_backend.dto.customer.CustomerFilterDTO;
+import com.yield.barbershop_backend.dto.customer.CustomerRegisterDTO;
+import com.yield.barbershop_backend.exception.DataConflictException;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.Customer;
 import com.yield.barbershop_backend.repository.CustomerRepo;
@@ -27,6 +29,22 @@ public class CustomerService {
     public Page<Customer> getCustomersByFilter(CustomerFilterDTO filter) {
         Pageable pageable = PageRequest.ofSize(filter.getPageSize()).withPage(filter.getPage());
         return customerRepo.findAll(CustomerSpecfication.filters(filter), pageable);
+    }
+
+    public Customer createCustomer(CustomerRegisterDTO customer) {
+
+        if (!customerRepo.findByEmailOrPhoneNumber(customer.getEmail(), customer.getPhoneNumber()).isEmpty()) {
+            throw new DataConflictException("Email or phone number already in use");
+        }
+
+        Customer newCustomer = new Customer();
+        newCustomer.setFullName(customer.getFullName());
+        newCustomer.setPhoneNumber(customer.getPhoneNumber());
+        newCustomer.setEmail(customer.getEmail());
+        // TODO: Hash the password before saving
+        newCustomer.setPassword(customer.getPassword());
+        
+        return customerRepo.save(newCustomer);
     }
 
 }

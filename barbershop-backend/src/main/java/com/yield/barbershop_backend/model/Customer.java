@@ -4,6 +4,7 @@ import java.sql.Date;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,8 +26,10 @@ public class Customer {
     private String email;
     private String phoneNumber;
     private String notes;
-    private Date createdAt;
-    private Date updatedAt;
+    
+    @Column(updatable = false)
+    private Date createdAt = new Date(System.currentTimeMillis());
+    private Date updatedAt = new Date(System.currentTimeMillis());
 
 
 }
