@@ -65,4 +65,18 @@ public class CustomerService {
         customerRepo.save(existingCustomer);
     }
 
+
+    public void changePassword(Long customerId, String newPassword) {
+        Customer existingCustomer = customerRepo.findById(customerId)
+            .orElseThrow(() -> new DataNotFoundException("Customer not found"));
+
+        if(existingCustomer.getPassword().equals(newPassword)) {
+            throw new DataConflictException("New password must be different from the old password");
+        }
+        
+        existingCustomer.setPassword(newPassword);
+        customerRepo.save(existingCustomer);
+    }
+
+
 }

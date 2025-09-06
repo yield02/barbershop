@@ -16,6 +16,7 @@ import com.yield.barbershop_backend.dto.customer.CustomerUpdateDTO;
 import com.yield.barbershop_backend.model.Customer;
 import com.yield.barbershop_backend.service.CustomerService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -65,9 +66,19 @@ public class CustomerController {
         
         // Check customerId = authenticated customer id
 
-        
         customerService.updateCustomer(customerId, customer);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{customerId}/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@PathVariable Long customerId, @RequestBody String newPassword) {
+        
+        // Check customerId = authenticated customer id
+
+        customerService.changePassword(customerId, newPassword);
+        return ResponseEntity.noContent().build();
+    }
+
+    
 
 }
