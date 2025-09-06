@@ -12,12 +12,14 @@ import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.PagedResponse;
 import com.yield.barbershop_backend.dto.customer.CustomerFilterDTO;
 import com.yield.barbershop_backend.dto.customer.CustomerRegisterDTO;
+import com.yield.barbershop_backend.dto.customer.CustomerUpdateDTO;
 import com.yield.barbershop_backend.model.Customer;
 import com.yield.barbershop_backend.service.CustomerService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 
@@ -57,4 +59,15 @@ public class CustomerController {
             createdCustomer
         ));
     }
+
+    @PutMapping("/{customerId}")
+    public ResponseEntity<ApiResponse<Void>> updateCustomer(@PathVariable Long customerId, @RequestBody @Validated CustomerUpdateDTO customer) {
+        
+        // Check customerId = authenticated customer id
+
+        
+        customerService.updateCustomer(customerId, customer);
+        return ResponseEntity.noContent().build();
+    }
+
 }

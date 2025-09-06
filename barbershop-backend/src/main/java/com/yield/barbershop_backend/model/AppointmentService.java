@@ -1,12 +1,6 @@
 package com.yield.barbershop_backend.model;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
-import com.yield.barbershop_backend.specification.AppointmentSpecification;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

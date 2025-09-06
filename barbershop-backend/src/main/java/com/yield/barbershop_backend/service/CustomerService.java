@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.yield.barbershop_backend.dto.customer.CustomerFilterDTO;
 import com.yield.barbershop_backend.dto.customer.CustomerRegisterDTO;
+import com.yield.barbershop_backend.dto.customer.CustomerUpdateDTO;
 import com.yield.barbershop_backend.exception.DataConflictException;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.Customer;
@@ -45,6 +46,23 @@ public class CustomerService {
         newCustomer.setPassword(customer.getPassword());
         
         return customerRepo.save(newCustomer);
+    }
+
+    public void updateCustomer(Long customerId, CustomerUpdateDTO customer) {
+    
+        Customer existingCustomer = customerRepo.findById(customerId)
+            .orElseThrow(() -> new DataNotFoundException("Customer not found"));
+
+        if(!customerRepo.findByEmailOrPhoneNumber(customer.getEmail(), customer.getPhoneNumber()).isEmpty()) {
+            throw new DataConflictException("Email or phone number already in use");
+        }
+
+        existingCustomer.setFullName(customer.getFullName());
+        existingCustomer.setEmail(customer.getEmail());
+        existingCustomer.setPhoneNumber(customer.getPhoneNumber());
+        existingCustomer.setAddress(customer.getAddress());
+        existingCustomer.setNotes(customer.getNotes());
+        customerRepo.save(existingCustomer);
     }
 
 }

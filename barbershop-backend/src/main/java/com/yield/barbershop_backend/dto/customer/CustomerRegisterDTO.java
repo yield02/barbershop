@@ -20,6 +20,7 @@ public class CustomerRegisterDTO {
 
     @NotBlank(message = "Full name is required")
     private String fullName;
+    
     @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^(\\+84|84|0)[35789]\\d{8}$", message = "Invalid phone number format")
     private String phoneNumber;

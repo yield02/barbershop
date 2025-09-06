@@ -25,6 +25,7 @@ public class Customer {
     private String fullName;
     private String email;
     private String phoneNumber;
+    private String address;
     private String notes;
     
     @Column(updatable = false)
