@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.yield.barbershop_backend.model.Customer;
 import java.util.List;
+import java.util.Optional;
 
 
 @Repository
@@ -18,5 +19,7 @@ JpaSpecificationExecutor<Customer>
 {
     @Query("SELECT c FROM customers c WHERE c.email = :email OR c.phoneNumber = :phoneNumber")
     List<Customer> findByEmailOrPhoneNumber(String email, String phoneNumber);
+
+    Optional<Customer> findByEmail(String email);
 
 } 

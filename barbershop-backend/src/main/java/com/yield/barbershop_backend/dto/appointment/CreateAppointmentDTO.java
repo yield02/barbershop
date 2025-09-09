@@ -1,6 +1,5 @@
 package com.yield.barbershop_backend.dto.appointment;
 
-import java.lang.reflect.Array;
 import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.ArrayList;

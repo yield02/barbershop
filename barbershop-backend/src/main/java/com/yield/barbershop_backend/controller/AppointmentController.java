@@ -9,7 +9,6 @@ import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
 import com.yield.barbershop_backend.dto.appointment.CreateAppointmentDTO;
 import com.yield.barbershop_backend.dto.appointment.UpdateAppointmentDTO;
 import com.yield.barbershop_backend.dto.appointment.UpdatePaymentConfirmedAppointmentDTO;
-import com.yield.barbershop_backend.dto.appointment.UpdateStatusAppointmentDTO;
 import com.yield.barbershop_backend.model.Appointment;
 import com.yield.barbershop_backend.service.AppointmentService;
 

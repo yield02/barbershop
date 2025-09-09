@@ -17,8 +17,8 @@ public class UserSpecification {
 
             List<Predicate> predicates = new ArrayList<>();
 
-            if (filter.getUserName() != null) {
-                predicates.add(criteriaBuilder.like(root.get("userName"), "%" + filter.getUserName() + "%"));
+            if (filter.getFullName() != null) {
+                predicates.add(criteriaBuilder.like(root.get("fullName"), "%" + filter.getFullName() + "%"));
             }
             if (filter.getRole() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("role"), filter.getRole()));

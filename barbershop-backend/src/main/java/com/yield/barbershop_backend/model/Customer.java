@@ -13,7 +13,7 @@ import lombok.Data;
 
 @Entity(name = "customers")
 @Data
-public class Customer {
+public class Customer implements AccountInterface {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,10 +27,21 @@ public class Customer {
     private String phoneNumber;
     private String address;
     private String notes;
+
+    private Boolean isActive;
     
     @Column(updatable = false)
     private Date createdAt = new Date(System.currentTimeMillis());
     private Date updatedAt = new Date(System.currentTimeMillis());
 
+    @Override
+    public String getRole() {
+        return "CUSTOMER";
+    }
+
+    @Override
+    public Long getId() {
+        return this.customerId;
+    }
 
 }

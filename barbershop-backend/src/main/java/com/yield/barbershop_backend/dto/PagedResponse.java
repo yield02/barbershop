@@ -3,7 +3,6 @@ package com.yield.barbershop_backend.dto;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

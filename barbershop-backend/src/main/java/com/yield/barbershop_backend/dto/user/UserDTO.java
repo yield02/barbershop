@@ -2,9 +2,7 @@ package com.yield.barbershop_backend.dto.user;
 
 import java.sql.Date;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;

@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.yield.barbershop_backend.dto.customer.CustomerFilterDTO;
@@ -21,6 +23,14 @@ public class CustomerService {
 
     @Autowired
     private CustomerRepo customerRepo;
+
+
+    public UserDetails loadCustomerByEmail(String email) {
+        Customer customer = customerRepo.findByEmail(email)
+            .orElseThrow(() -> new UsernameNotFoundException("Email not found"));
+        return new com.yield.barbershop_backend.model.AccountPrincipal<Customer>(customer);
+    }
+
 
     public Customer getCustomerById(Long customerId) {
         return customerRepo.findById(customerId)
@@ -77,6 +87,8 @@ public class CustomerService {
         existingCustomer.setPassword(newPassword);
         customerRepo.save(existingCustomer);
     }
+
+
 
 
 }

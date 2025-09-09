@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.ErrorDetail;
 
-import jakarta.validation.ValidationException;
 
 @RestControllerAdvice
 public class GlobalControllerExceptionHandler {
@@ -39,4 +39,10 @@ public class GlobalControllerExceptionHandler {
         return new ResponseEntity<>(apiResponse, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ApiResponse<ErrorDetail>> handleUsernameNotFoundException(UsernameNotFoundException e) {
+        ErrorDetail errorDetail = new ErrorDetail("UNAUTHORIZED", e.getMessage(), List.of());
+        ApiResponse<ErrorDetail> apiResponse = new ApiResponse<>(false, e.getMessage(), errorDetail);
+        return new ResponseEntity<>(apiResponse, HttpStatus.UNAUTHORIZED);
+    }
 }

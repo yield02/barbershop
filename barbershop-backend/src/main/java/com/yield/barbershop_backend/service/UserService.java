@@ -6,11 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.yield.barbershop_backend.dto.user.UserDTO;
 import com.yield.barbershop_backend.dto.user.UserFilterDTO;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
+import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.User;
 import com.yield.barbershop_backend.repository.UserRepo;
 import com.yield.barbershop_backend.specification.UserSpecification;
@@ -24,10 +27,6 @@ public class UserService {
     @Autowired
     private UserRepo userRepo;
 
-    public List<User> getUserByUsername(String username) {
-
-        return userRepo.findByUsernameLike(username);
-    }
 
     public Page<User> getUsersByFilter(UserFilterDTO filter) {
         Pageable page = PageRequest.of(filter.getPage(), filter.getPageSize());
@@ -52,6 +51,14 @@ public class UserService {
 
     public void deleteUser(Long userId) {
         userRepo.deleteById(userId);
+    }
+
+    public UserDetails loadUserByEmail(String email) {
+
+        User user = userRepo.findByEmail(email)
+        .orElseThrow(() -> new UsernameNotFoundException("Email not found"));
+        
+        return new AccountPrincipal<User>(user);
     }
 
 

@@ -13,22 +13,20 @@ import lombok.Data;
 
 @Entity(name = "users")
 @Data
-public class User {
+public class User implements AccountInterface {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
-    private String username;
-    
+    private String email;
     @JsonIgnore
     private String password;
 
     private String fullName;
     private String role;
-    private String email;
     private String phoneNumber;
-    private Byte isActive;
+    private Boolean isActive;
 
     @Column(updatable = false)
     private Date createdAt;
@@ -66,6 +64,11 @@ public class User {
         }
         masked += phoneNumber.substring(phoneNumber.length() - 4);
         return masked;
+    }
+
+    @Override
+    public Long getId() {
+        return this.userId;
     }
  
 }

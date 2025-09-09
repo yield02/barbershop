@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class UserFilterDTO {
     
 
-    private String userName;
+    private String fullName;
     private String role;
     private Boolean isActive;
     private Integer page = 0;

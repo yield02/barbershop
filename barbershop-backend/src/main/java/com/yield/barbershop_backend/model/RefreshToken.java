@@ -1,7 +1,9 @@
 package com.yield.barbershop_backend.model;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,16 +20,20 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String token;
-    private Date createdAt;
-    private Date expiryDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime expiryDate;
 
+    @Column(name = "user_id")
+    private Long userId;
 
-    
+    @Column(name = "customer_id")
+    private Long customerId;
+
     @OneToOne
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id", insertable = false, updatable = false)
     private Customer customer;
 
     @OneToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 }
