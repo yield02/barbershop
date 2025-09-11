@@ -6,7 +6,7 @@ import java.time.ZoneId;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 
 import com.yield.barbershop_backend.model.RefreshToken;
 import com.yield.barbershop_backend.repository.RefreshTokenRepo;
@@ -57,10 +57,11 @@ public class RefreshTokenService {
     }
 
 
+    @Transactional
     public void deleteByCustomerId(Long customerId) {
         refreshTokenRepository.deleteByCustomerId(customerId);
     }
-
+    @Transactional
     public void deleteByUserId(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
     }

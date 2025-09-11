@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.ErrorDetail;
 
+import io.jsonwebtoken.JwtException;
+
 
 @RestControllerAdvice
 public class GlobalControllerExceptionHandler {
@@ -42,6 +44,13 @@ public class GlobalControllerExceptionHandler {
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiResponse<ErrorDetail>> handleUsernameNotFoundException(UsernameNotFoundException e) {
         ErrorDetail errorDetail = new ErrorDetail("UNAUTHORIZED", e.getMessage(), List.of());
+        ApiResponse<ErrorDetail> apiResponse = new ApiResponse<>(false, e.getMessage(), errorDetail);
+        return new ResponseEntity<>(apiResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ApiResponse<ErrorDetail>> handleUnauthorizedException(JwtException e) {
+        ErrorDetail errorDetail  = new ErrorDetail("UNAUTHORIZED", e.getMessage(), List.of());
         ApiResponse<ErrorDetail> apiResponse = new ApiResponse<>(false, e.getMessage(), errorDetail);
         return new ResponseEntity<>(apiResponse, HttpStatus.UNAUTHORIZED);
     }

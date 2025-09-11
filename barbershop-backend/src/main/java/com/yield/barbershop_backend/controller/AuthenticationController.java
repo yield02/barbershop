@@ -109,23 +109,9 @@ public class AuthenticationController {
         tokenData.setType(TokenDataEntity.Type.STAFF);
 
         String accessToken = jwtUtil.generateToken(tokenData, JwtUtil.TokenType.ACCESS);
-
-        Cookie accessTokenCookie = new Cookie("access_token", accessToken);
-        accessTokenCookie.setHttpOnly(true);
-        accessTokenCookie.setSecure(true); // Set to true in production with HTTPS
-        accessTokenCookie.setPath("/");
-        accessTokenCookie.setMaxAge(60 * 15); // 15 minutes
-
         String refreshToken = jwtUtil.generateToken(tokenData, JwtUtil.TokenType.REFRESH); // 30 days
 
-        Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true); // Set to true in production with HTTPS
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(60 * 60 * 24 * 30); // 30 days
-
-        response.addCookie(accessTokenCookie);
-        response.addCookie(refreshTokenCookie);
+        jwtUtil.setAuthenticationCookies(accessToken, refreshToken, response);
 
         refreshTokenService.saveUserToken(accountPrincipal.getId(), refreshToken);
         

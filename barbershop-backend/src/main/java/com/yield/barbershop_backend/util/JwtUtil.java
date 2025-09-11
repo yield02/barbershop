@@ -1,17 +1,30 @@
 package com.yield.barbershop_backend.util;
 
 import java.security.Key;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import com.yield.barbershop_backend.dto.TokenDataEntity;
 
+import io.jsonwebtoken.ClaimJwtException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Builder.Default;
 
 @Component
@@ -43,10 +56,12 @@ public class JwtUtil {
 
         return Jwts.builder()
             .setSubject(tokenData.getId().toString())
+            .claim("typeToken", tokenType.toString())
             .claim("type", tokenData.getType())
             .claim("role", tokenData.getRole())
             .claim("email", tokenData.getEmail())
             .setExpiration(new Date(System.currentTimeMillis() + expirationMinutes * 1000))
+            // .setExpiration(new Date(System.currentTimeMillis() + 60 * 1000))
             .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
             .compact();
     }
@@ -58,29 +73,59 @@ public class JwtUtil {
                 .build()
                 .parseClaimsJws(token);
             return true;
-        } catch (Exception e) {
+        }
+        catch (ExpiredJwtException e) {
+            return true;
+        }
+        catch (Exception e) {
             return false;
         }
     }
 
-    public Long extractSubject(String token) {
-        String subject = Jwts.parserBuilder()
-            .setSigningKey(SECRET_KEY)
-            .build()
-            .parseClaimsJws(token)
-            .getBody()
-            .getSubject();
-        return Long.parseLong(subject);
+    public String extractTypeToken(String token) {
+        try {
+            return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("typeToken", String.class);
+        } catch (ClaimJwtException e) {
+            return e.getClaims().get("typeToken", String.class);
+        }
     }
 
-    public String extractRole(String token) {
-        return Jwts.parserBuilder()
+    public Long extractSubject(String token) {
+        try {
+            return Long.parseLong(Jwts.parserBuilder()
             .setSigningKey(SECRET_KEY)
             .build()
             .parseClaimsJws(token)
             .getBody()
-            .get("role", String.class);
+            .getSubject());
+        }
+        catch (ClaimJwtException e) {
+            return Long.parseLong(e.getClaims().getSubject());
+        }
     }
+
+public Collection<? extends GrantedAuthority> extractRole(String token) {
+    Claims claims = Jwts.parserBuilder()
+        .setSigningKey(SECRET_KEY)
+        .build()
+        .parseClaimsJws(token)
+        .getBody();
+    
+    Object rolesClaim = claims.get("role");
+    
+    if (rolesClaim instanceof List) {
+                List<Map<String, String>> roles = (List<Map<String, String>>) rolesClaim;
+        return roles.stream()
+                .map(roleMap -> new SimpleGrantedAuthority(roleMap.get("authority")))
+                .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+}
 
     public String extractType(String token) {
         return Jwts.parserBuilder()
@@ -91,13 +136,44 @@ public class JwtUtil {
             .get("type", String.class);
     }
 
+    public String extractEmail(String token) {
+        return Jwts.parserBuilder()
+            .setSigningKey(SECRET_KEY)
+            .build()
+            .parseClaimsJws(token)
+            .getBody()
+            .get("type", String.class);
+    }
+
     public boolean isTokenExpired(String token) {
-        Date expiration = Jwts.parserBuilder()
+        try {
+            Date expiration = Jwts.parserBuilder()
             .setSigningKey(SECRET_KEY)
             .build()
             .parseClaimsJws(token)
             .getBody()
             .getExpiration();
-        return expiration.before(new Date());
+        }
+        catch (ExpiredJwtException e) {
+            return true;
+        }
+        return false;
+    }
+
+    public void setAuthenticationCookies(String accessToken, String refreshToken, HttpServletResponse response) {
+        Cookie accessTokenCookie = new Cookie("access_token", accessToken);
+        accessTokenCookie.setHttpOnly(true);
+        accessTokenCookie.setSecure(true); // Set to true in production with HTTPS
+        accessTokenCookie.setPath("/");
+        accessTokenCookie.setMaxAge(60 * 15); // 15 minutes
+
+        Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true); // Set to true in production with HTTPS
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(60 * 60 * 24 * 30); // 30 days
+
+        response.addCookie(accessTokenCookie);
+        response.addCookie(refreshTokenCookie);
     }
 }
