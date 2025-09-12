@@ -250,14 +250,6 @@ public class  AppointmentService {
         appointmentRepo.save(appointment);
     }
 
-
-    public void updatePaymentConfirmedStatus(Long appointmentId, UpdatePaymentConfirmedAppointmentDTO payment) {
-        int result = appointmentRepo.updatePaymentConfirmedStatus(appointmentId, payment.getPaymentConfirmed());
-        if (result == 0) {
-            throw new DataNotFoundException("Appointment not found with id: " + appointmentId);
-        }
-    }
-
     public void cancelAppointment(Long appointmentId) {
 
 

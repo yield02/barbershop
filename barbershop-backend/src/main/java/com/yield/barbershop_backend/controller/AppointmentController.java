@@ -67,12 +67,12 @@ public class AppointmentController {
             updatedAppointment
         ));
     }
-
-    @PatchMapping("/{appointmentId}/payment-status")
-    public ResponseEntity<ApiResponse<Void>> updatePaymentConfirmedStatus(@PathVariable Long appointmentId, @RequestBody @Validated UpdatePaymentConfirmedAppointmentDTO payment) {
-        appointmentService.updatePaymentConfirmedStatus(appointmentId, payment);
-        return ResponseEntity.noContent().build();
-    }
+ 
+    // @PatchMapping("/{appointmentId}/payment-status")
+    // public ResponseEntity<ApiResponse<Void>> updatePaymentConfirmedStatus(@PathVariable Long appointmentId, @RequestBody @Validated UpdatePaymentConfirmedAppointmentDTO payment) {
+    //     appointmentService.updatePaymentConfirmedStatus(appointmentId, payment);
+    //     return ResponseEntity.noContent().build();
+    // }
 
     @PatchMapping("/{appointmentId}/status/cancelled")
     public ResponseEntity<ApiResponse<Void>> cancelAppointment(@PathVariable Long appointmentId) {

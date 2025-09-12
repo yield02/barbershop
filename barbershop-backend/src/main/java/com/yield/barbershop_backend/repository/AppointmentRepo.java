@@ -21,11 +21,5 @@ JpaSpecificationExecutor<Appointment>,
 PagingAndSortingRepository<Appointment, Long>
 {
 
-    @Modifying
-    @Transactional
-    @Query("UPDATE appointments a SET a.paymentConfirmed = :paymentConfirmed WHERE a.appointmentId = :appointmentId")
-    int updatePaymentConfirmedStatus(Long appointmentId, Boolean paymentConfirmed);
-
-
     Optional<Appointment> findByAppointmentIdAndCustomerId(Long appointmentId, Long customerId);
 }

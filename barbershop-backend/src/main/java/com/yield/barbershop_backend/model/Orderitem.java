@@ -19,6 +19,7 @@ public class Orderitem {
     private Long orderItemId;
     private Integer quantity;
     private Double price;
+    private String name;
 
     @ManyToOne(fetch = FetchType.LAZY, targetEntity = Order.class)
     @JoinColumn(name = "order_id")

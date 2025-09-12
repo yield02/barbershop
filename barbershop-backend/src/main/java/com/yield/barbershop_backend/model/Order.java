@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,10 +27,12 @@ public class Order {
     private String customerEmail;
     private Date orderTime;
     private Double totalAmount;
-    private String paymentMethod;
     private String status;
     private String notes;
+
+    @Column(updatable = false)
     private Date createdAt;
+
     private Date updatedAt;
 
     @ManyToOne
