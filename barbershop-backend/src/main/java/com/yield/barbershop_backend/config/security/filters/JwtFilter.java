@@ -22,6 +22,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -58,10 +59,23 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
     
         try {
+        
+        Cookie[] cookies = request.getCookies();
 
-        String accessToken = request.getHeader("access_token");
-        String refreshToken = request.getHeader("refresh_token");
+        String accessToken = null;
+        String refreshToken = null;
 
+        if(cookies != null) {
+            for(Cookie cookie : cookies) {
+                if(cookie.getName().equals("access_token")) {
+                    accessToken = cookie.getValue();
+                }
+                if(cookie.getName().equals("refresh_token")) {
+                    refreshToken = cookie.getValue();
+                }
+            }
+        }
+            
         if(accessToken == null || refreshToken == null) {
             filterChain.doFilter(request, response);
             return;
