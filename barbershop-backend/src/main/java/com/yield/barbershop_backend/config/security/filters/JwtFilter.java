@@ -42,7 +42,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
 
 
-/*************  ✨ Windsurf Command ⭐  *************/
     /**
      * This method is used to filter every incoming request. It checks if the request has valid access token and refresh token.
      * If the access token is valid and not expired, it sets the authentication context and allows the request to pass through.
@@ -55,7 +54,6 @@ public class JwtFilter extends OncePerRequestFilter {
      * @throws ServletException if there is an error during the filtering process
      * @throws IOException if there is an error during the filtering process
      */
-/*******  2c7c12de-82ff-4bf0-97da-f16d9ea64ce2  *******/
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
     
@@ -69,20 +67,16 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Check access token is valid
         if(!jwtUtil.validateToken(accessToken) || !jwtUtil.extractTypeToken(accessToken).equals(JwtUtil.TokenType.ACCESS.toString())) {
             throw new MalformedJwtException("Access Token is invalid");
         }
 
-
-        // Check access token is not expired
         if(!jwtUtil.isTokenExpired(accessToken)) {
             setAuthenticationContext(accessToken, request);
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Check refresh token is valid
         
         if(!jwtUtil.validateToken(refreshToken) || !jwtUtil.extractTypeToken(refreshToken).equals(JwtUtil.TokenType.REFRESH.toString())) {
             throw new MalformedJwtException("Access Token is expired and Refresh Token is invalid");
@@ -110,6 +104,13 @@ public class JwtFilter extends OncePerRequestFilter {
         }
     }
 
+        /**
+     * Handles the refresh token for a staff account.
+     * 
+     * @param refreshToken the refresh token to be handled
+     * @param request the incoming HTTP request
+     * @param response the HTTP response
+     */
     public void handleRefreshTokenStaff(String refreshToken, HttpServletRequest request, HttpServletResponse response) {
 
         Long userId = jwtUtil.extractSubject(refreshToken);
@@ -139,6 +140,14 @@ public class JwtFilter extends OncePerRequestFilter {
         setAuthenticationContext(newAccessToken, request);
     }
 
+
+    /**
+     * Handles the refresh token for a customer account.
+     * 
+     * @param refreshToken the refresh token to be handled
+     * @param request the incoming HTTP request
+     * @param response the HTTP response
+     */
     public void handleRefreshTokenCustomer(String refreshToken, HttpServletRequest request, HttpServletResponse response) {
 
         Long customerId = jwtUtil.extractSubject(refreshToken);
@@ -170,7 +179,12 @@ public class JwtFilter extends OncePerRequestFilter {
         setAuthenticationContext(newAccessToken, request);
     }
 
-
+    /**
+        * Sets the authentication context for the given access token and request.
+        * 
+        * @param accessToken the access token for which to set the authentication context
+        * @param request the incoming HTTP request
+    */
     public void setAuthenticationContext(String token, HttpServletRequest request) {
 
         String email = jwtUtil.extractEmail(token);

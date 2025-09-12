@@ -165,7 +165,7 @@ public Collection<? extends GrantedAuthority> extractRole(String token) {
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setSecure(true); // Set to true in production with HTTPS
         accessTokenCookie.setPath("/");
-        accessTokenCookie.setMaxAge(60 * 15); // 15 minutes
+        accessTokenCookie.setMaxAge(60 * 60 * 24 * 30); // 15 minutes
 
         Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
