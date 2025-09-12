@@ -38,7 +38,6 @@ public class Appointment {
       
     private String notes;
     private Double totalAmount;
-    private Boolean paymentConfirmed = false;
 
     @Column(updatable = false)
     private Date createdAt;
