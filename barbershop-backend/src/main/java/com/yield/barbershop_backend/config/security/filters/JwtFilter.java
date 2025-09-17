@@ -5,6 +5,7 @@ import java.util.Collection;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -13,6 +14,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import com.yield.barbershop_backend.dto.TokenDataEntity;
+import com.yield.barbershop_backend.model.AccountInterface;
+import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.RefreshToken;
 import com.yield.barbershop_backend.service.RefreshTokenService;
 import com.yield.barbershop_backend.util.JwtUtil;
@@ -87,6 +90,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if(!jwtUtil.isTokenExpired(accessToken)) {
             setAuthenticationContext(accessToken, request);
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                System.out.println(auth.getAuthorities());
             filterChain.doFilter(request, response);
             return;
         }
@@ -116,6 +121,9 @@ public class JwtFilter extends OncePerRequestFilter {
             System.out.println(e.getMessage()  );
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
+        
+        filterChain.doFilter(request, response);
+        
     }
 
         /**
@@ -203,9 +211,36 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String email = jwtUtil.extractEmail(token);
         Collection<? extends GrantedAuthority> role = jwtUtil.extractRole(token);
+        Long id = jwtUtil.extractSubject(token);
 
+        AccountPrincipal accountPrincipal = new AccountPrincipal<AccountInterface>(new AccountInterface() {
+            @Override
+            public Long getId() {
+                return id;
+            }
 
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(email, null, role);
+            @Override
+            public String getEmail() {
+                return email;
+            }
+            
+            @Override
+            public String getPassword() {
+                return null;
+            }
+
+            @Override
+            public String getRole() {
+                return role.toString();
+            }
+
+            @Override
+            public Boolean getIsActive() {
+                return true;
+            }
+        });
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(accountPrincipal, null, role);
+        System.out.println("JWT Authentication: " + authentication);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
     }

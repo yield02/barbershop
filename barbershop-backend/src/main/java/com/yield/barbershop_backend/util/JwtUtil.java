@@ -142,7 +142,7 @@ public Collection<? extends GrantedAuthority> extractRole(String token) {
             .build()
             .parseClaimsJws(token)
             .getBody()
-            .get("type", String.class);
+            .get("email", String.class);
     }
 
     public boolean isTokenExpired(String token) {
