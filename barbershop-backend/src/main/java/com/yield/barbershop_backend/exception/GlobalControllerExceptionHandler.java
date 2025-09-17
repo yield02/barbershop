@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,7 +23,7 @@ public class GlobalControllerExceptionHandler {
 
     @ExceptionHandler(DataNotFoundException.class)
     public ResponseEntity<ApiResponse<ErrorDetail>> handleDataNotFoundException(DataNotFoundException e) {
-        ErrorDetail errorDetail = new ErrorDetail("DATA_NOT_FOUND", e.getMessage(), List.of());
+        ErrorDetail errorDetail = new ErrorDetail("DATA_NOT_FOUND", e.getMessage(), e.getDetails());
         ApiResponse<ErrorDetail> apiResponse = new ApiResponse<>(false, "Data Not Found", errorDetail);
         return new ResponseEntity<>(apiResponse, HttpStatus.NOT_FOUND);
     }
@@ -53,5 +54,13 @@ public class GlobalControllerExceptionHandler {
         ErrorDetail errorDetail  = new ErrorDetail("UNAUTHORIZED", e.getMessage(), List.of());
         ApiResponse<ErrorDetail> apiResponse = new ApiResponse<>(false, e.getMessage(), errorDetail);
         return new ResponseEntity<>(apiResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+
+    @ExceptionHandler(AccessDeniedException.class) 
+    public ResponseEntity<ApiResponse<ErrorDetail>> handleIllegalArgumentException(AccessDeniedException e) {
+        ErrorDetail errorDetail  = new ErrorDetail("FORBIDDEN", "You are not authorized", List.of());
+        ApiResponse<ErrorDetail> apiResponse = new ApiResponse<>(false, "You are not authorized", errorDetail);
+        return new ResponseEntity<>(apiResponse, HttpStatus.FORBIDDEN);
     }
 }

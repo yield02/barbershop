@@ -22,7 +22,7 @@ public class DrinkDTO {
     private Double price;
 
     @NotNull(message = "stockQuantity is mandatory")
-    private Integer stockQuantity;
+    private Long stockQuantity;
 
     @NotBlank(message = "category is mandatory")
     private String category;

@@ -13,10 +13,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity(name = "orders")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class Order {
 
     @Id
@@ -25,7 +31,6 @@ public class Order {
     private String customerName;
     private String customerPhone;
     private String customerEmail;
-    private Date orderTime;
     private Double totalAmount;
     private String status;
     private String notes;
@@ -45,5 +50,5 @@ public class Order {
 
     @OneToMany(mappedBy = "order")
     @JsonManagedReference
-    private List<Orderitem> orderItems;
+    private List<OrderItem> orderItems;
 }

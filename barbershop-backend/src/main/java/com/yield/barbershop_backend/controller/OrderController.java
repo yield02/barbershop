@@ -5,15 +5,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.PagedResponse;
+import com.yield.barbershop_backend.dto.order.OrderCreateDTO;
 import com.yield.barbershop_backend.dto.order.OrderFilterDTO;
+import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.Order;
 import com.yield.barbershop_backend.service.OrderService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 
 
@@ -33,7 +41,7 @@ public class OrderController {
         );
     }
 
-
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'STAFF')")
     @GetMapping("")
     public ResponseEntity<ApiResponse<PagedResponse<Order>>> getOrderByFilter(OrderFilterDTO filter) {
         return ResponseEntity.ok(new ApiResponse<>(
@@ -41,4 +49,24 @@ public class OrderController {
             "", 
             new PagedResponse<>(orderService.getOrdersByFilter(filter))));
     }
+    
+    @PostMapping("")
+    public ResponseEntity<ApiResponse<Order>> createOrder(@RequestBody OrderCreateDTO orderCreateDTO) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+
+        AccountPrincipal principal = (AccountPrincipal) authentication.getPrincipal();
+
+        System.out.println("Principal: " + principal);
+
+        if(authentication.getAuthorities().contains("ROLE_CUSTOMER")){
+            System.out.println("Customer Create ID: " + principal.getId());
+            orderCreateDTO.setCustomerId(principal.getId());
+        }
+
+        return ResponseEntity.created(null).body(new ApiResponse<Order>(true, "", orderService.createOrder(orderCreateDTO)));
+
+    }
+    
 }
+

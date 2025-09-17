@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -22,7 +23,7 @@ public class AccountPrincipal<T extends AccountInterface> implements UserDetails
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(account.getRole()::toString);
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + account.getRole().toString().toUpperCase()));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.yield.barbershop_backend.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +25,6 @@ public interface ProductRepo extends
    @Query("UPDATE products p SET p.stockQuantity = :stockQuantity WHERE p.productId = :id")
    int updateProductStockById(@Param("id") Long id, @Param("stockQuantity") Integer stockQuantity);
 
+   @Query("SELECT p FROM products p WHERE p.productId IN :productIds")
+   List<Product> getProductByIds(List<Long> productIds);
 }

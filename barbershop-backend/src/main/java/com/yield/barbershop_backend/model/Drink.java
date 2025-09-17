@@ -26,7 +26,7 @@ public class Drink {
     private String drinkName;
     private String description;
     private Double price;
-    private Integer stockQuantity;
+    private Long stockQuantity;
     private String category;
     private Double alcoholPercentage;
     private String imageUrl;

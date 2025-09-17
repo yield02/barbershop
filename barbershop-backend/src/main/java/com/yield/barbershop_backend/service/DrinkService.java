@@ -62,5 +62,18 @@ public class DrinkService {
             throw new DataNotFoundException("Drink not found");
         }
     }
+
+    public List<Drink> getDrinkByIds(List<Long> drinkIds) {
+
+        if (drinkIds == null || drinkIds.isEmpty()) {
+            return List.of();
+        }
+
+        return drinkRepo.getDrinkByIds(drinkIds);
+    }
+
+    public void saveDrinks(List<Drink> drinks) {
+        drinkRepo.saveAll(drinks);
+    }
     
 }   

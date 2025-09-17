@@ -1,5 +1,7 @@
 package com.yield.barbershop_backend.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -25,6 +27,9 @@ JpaSpecificationExecutor<Drink>
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     int updateDrinkStockById(@Param("id") Long id, @Param("stockQuantity") Integer stockQuantity);
 
+
+    @Query("SELECT d FROM drinks d WHERE d.drinkId IN :drinkIds")
+    List<Drink> getDrinkByIds(List<Long> drinkIds);
 }
 
 

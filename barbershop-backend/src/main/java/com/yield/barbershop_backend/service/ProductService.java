@@ -1,6 +1,8 @@
 package com.yield.barbershop_backend.service;
 
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -64,6 +66,18 @@ public class ProductService {
         if (updatedRows == 0) {
             throw new DataNotFoundException("Product not found for stock update");
         }
+    }
+
+    public List<Product> getProductByIds(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+        return productRepo.getProductByIds(productIds);
+    }
+
+
+    public void saveProducts(List<Product> products) {
+        productRepo.saveAll(products);
     }
 
 
