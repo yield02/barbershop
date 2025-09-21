@@ -1,18 +1,18 @@
 package com.yield.barbershop_backend.service;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -187,6 +187,8 @@ public class OrderService {
             .customerPhone(customer.getPhoneNumber())
             .totalAmount(totalAmount)
             .status("Pending")
+            .createdAt(new Date(System.currentTimeMillis()))
+            .updatedAt(new Date(System.currentTimeMillis()))
             .build();
 
    
@@ -199,7 +201,7 @@ public class OrderService {
         List<OrderItem> orderItems = new ArrayList<>();
         orderItems.addAll(drinks.stream().map(drink -> {
             OrderItem orderItem = OrderItem.builder()
-                .order(savedOrder)
+                .orderId(savedOrder.getOrderId())
                 .drinkId(drink.getDrinkId())
                 .name(drink.getDrinkName())
                 .quantity(order.getDrinks().stream().filter(drinkItem -> drinkItem.getItemId().equals(drink.getDrinkId())).findFirst().get().getQuantity())
@@ -210,7 +212,7 @@ public class OrderService {
 
         orderItems.addAll(products.stream().map(product -> {
             OrderItem orderItem = OrderItem.builder()
-                .order(savedOrder)
+                .orderId(savedOrder.getOrderId())
                 .productId(product.getProductId())
                 .name(product.getProductName())
                 .quantity(order.getProducts().stream().filter(productItem -> productItem.getItemId().equals(product.getProductId())).findFirst().get().getQuantity())
@@ -226,4 +228,56 @@ public class OrderService {
         return savedOrder;
     }
     
+    @Transactional
+    public void updateOrderStatus(Long orderId, String status) {
+        // Pending, Processcing, Completed, Cancelled
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
+        
+        if(order.getStatus().equals("Completed") || order.getStatus().equals("Cancelled")) {
+            throw new DataConflictException("Cannot update status of order with status: " + order.getStatus());
+        }
+
+        order.setStatus(status);
+        order.setUpdatedAt(new Date(System.currentTimeMillis()));
+        
+        // Save order
+        orderRepo.save(order);
+
+        if(!order.getStatus().equals("Cancelled")) {
+            return ;
+        }
+        
+        // Plus Stock
+        List<OrderItem> items = order.getOrderItems();
+
+        List<OrderItem> drinkItems = items.stream().filter(item -> item.getDrinkId() != null).collect(Collectors.toList());
+        List<OrderItem> productItems = items.stream().filter(item -> item.getProductId() != null).toList();
+
+
+        List<Long> drinkIds = drinkItems.stream().map(OrderItem::getDrinkId).collect(Collectors.toList());
+        List<Long> productIds = productItems.stream().map(OrderItem::getProductId).toList();
+
+        List<Drink> drinks = drinkService.getDrinkByIds(drinkIds);
+        List<Product> products = productService.getProductByIds(productIds);
+        
+        // Plus Drink Stock
+        if(drinks.size() > 0) {
+            drinks.forEach(drink -> {
+            Long quantity = drinkItems.stream().filter(drinkItem -> drinkItem.getDrinkId().equals(drink.getDrinkId())).findFirst().get().getQuantity();
+            drink.setStockQuantity(drink.getStockQuantity() + quantity);
+            });
+            drinkService.saveDrinks(drinks);
+        }
+        
+        
+        // Plus Product Stock
+        if(products.size() > 0) {
+            products.forEach(product -> {
+            Long quantity = productItems.stream().filter(productItem -> productItem.getProductId().equals(product.getProductId())).findFirst().get().getQuantity();
+            product.setStockQuantity(product.getStockQuantity() + quantity);
+            });
+            productService.saveProducts(products);
+        }
+    }
 }
+

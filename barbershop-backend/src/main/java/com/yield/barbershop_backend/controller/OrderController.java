@@ -7,6 +7,7 @@ import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.PagedResponse;
 import com.yield.barbershop_backend.dto.order.OrderCreateDTO;
 import com.yield.barbershop_backend.dto.order.OrderFilterDTO;
+import com.yield.barbershop_backend.dto.order.OrderUpdateStatusDTO;
 import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.Order;
 import com.yield.barbershop_backend.service.OrderService;
@@ -15,9 +16,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -54,7 +56,6 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Order>> createOrder(@RequestBody OrderCreateDTO orderCreateDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-
         AccountPrincipal principal = (AccountPrincipal) authentication.getPrincipal();
 
         System.out.println("Principal: " + principal);
@@ -68,5 +69,11 @@ public class OrderController {
 
     }
     
+    @PatchMapping("/{orderId}/status")
+    public ResponseEntity<ApiResponse<Void>> updateOrderStatus(@PathVariable Long orderId, @RequestBody @Validated OrderUpdateStatusDTO orderUpdateStatusDTO) {
+        orderService.updateOrderStatus(orderId, orderUpdateStatusDTO.getStatus());
+        return ResponseEntity.noContent().build();
+    }
+
 }
 

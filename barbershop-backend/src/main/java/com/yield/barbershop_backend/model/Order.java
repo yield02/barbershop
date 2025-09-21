@@ -36,9 +36,9 @@ public class Order {
     private String notes;
 
     @Column(updatable = false)
-    private Date createdAt;
+    private Date createdAt = new Date(System.currentTimeMillis());
 
-    private Date updatedAt;
+    private Date updatedAt = new Date(System.currentTimeMillis());
 
     @ManyToOne
     @JoinColumn(name = "customer_id")

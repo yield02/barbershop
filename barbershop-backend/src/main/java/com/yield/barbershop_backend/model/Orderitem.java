@@ -34,6 +34,9 @@ public class OrderItem {
     @Column(name = "drink_id")
     private Long drinkId;
 
+    @Column(name = "order_id")
+    private Long orderId;
+
 
 
     @ManyToOne(fetch = FetchType.LAZY, targetEntity = Product.class)
@@ -47,7 +50,7 @@ public class OrderItem {
     private Drink drink;
 
     @ManyToOne(fetch = FetchType.LAZY, targetEntity = Order.class)
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id", insertable = false, updatable = false)
     @JsonBackReference
     private Order order;
 
