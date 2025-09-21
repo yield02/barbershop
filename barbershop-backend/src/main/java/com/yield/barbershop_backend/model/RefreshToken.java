@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,11 +30,11 @@ public class RefreshToken {
     @Column(name = "customer_id")
     private Long customerId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY, targetEntity = Customer.class)
     @JoinColumn(name = "customer_id", insertable = false, updatable = false)
     private Customer customer;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY, targetEntity = User.class)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 }
