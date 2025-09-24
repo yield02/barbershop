@@ -1,6 +1,7 @@
 package com.yield.barbershop_backend.model;
 
-import java.sql.Date;
+
+import java.util.Date;
 
 import com.yield.barbershop_backend.dto.product.ProductDTO;
 
@@ -34,6 +35,7 @@ public class Product {
 
     @Column(updatable = false)
     private Date createdAt;
+
     private Date updatedAt;
 
 

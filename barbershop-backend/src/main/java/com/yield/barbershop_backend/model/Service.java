@@ -1,6 +1,7 @@
 package com.yield.barbershop_backend.model;
 
-import java.sql.Date;
+
+import java.util.Date;
 
 import com.yield.barbershop_backend.dto.service.ServiceDTO;
 

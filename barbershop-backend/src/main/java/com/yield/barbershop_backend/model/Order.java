@@ -1,6 +1,6 @@
 package com.yield.barbershop_backend.model;
 
-import java.sql.Date;
+import java.util.Date;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -40,6 +40,8 @@ public class Order {
 
     private Date updatedAt = new Date(System.currentTimeMillis());
 
+
+    
     @ManyToOne
     @JoinColumn(name = "customer_id")
     private Customer customer;

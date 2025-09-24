@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.yield.barbershop_backend.dto.order.OrderCreateDTO;
 import com.yield.barbershop_backend.dto.order.OrderFilterDTO;
+import com.yield.barbershop_backend.dto.order.OrderProductItemCreateDTO;
+import com.yield.barbershop_backend.dto.order.OrderUpdateDTO;
 import com.yield.barbershop_backend.exception.DataConflictException;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.Customer;
@@ -85,8 +87,8 @@ public class OrderService {
         if(drinkIds.size() != drinks.size()) {
             List<Long> drinkIsNotExisted = drinkIds.stream()
             .filter(id -> !drinks.stream()
-            .map(Drink::getDrinkId)
-            .anyMatch(drinkId -> drinkId.equals(id)))
+                .map(Drink::getDrinkId)
+                .anyMatch(drinkId -> drinkId.equals(id)))
             .collect(Collectors.toList());
             
             itemsNotFound.put("Drinks not found with ids", drinkIsNotExisted);
@@ -278,6 +280,209 @@ public class OrderService {
             });
             productService.saveProducts(products);
         }
+    }
+
+    @Transactional
+    public Order updateOrder(Long orderId, OrderUpdateDTO order) {
+        
+        Order existingOrder = orderRepo.findById(orderId).orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
+
+
+        // 1.[Check order status] Start
+        if(existingOrder.getStatus().equals("Completed") || existingOrder.getStatus().equals("Cancelled")) {
+            throw new DataConflictException("Cannot update order with status: " + existingOrder.getStatus());
+        }
+        // 1.[Check order status] End
+
+        
+
+            // Get all new drinks and products id
+        Map<Long, Long> newDrinkIdsAndQuantity = order.getDrinks().stream().collect(Collectors.toMap(OrderProductItemCreateDTO::getItemId, OrderProductItemCreateDTO::getQuantity));
+        Map<Long, Long> newProductIdsAndQuantity = order.getProducts().stream().collect(Collectors.toMap(OrderProductItemCreateDTO::getItemId, OrderProductItemCreateDTO::getQuantity));
+        
+            // Get all stock drinks and products to check existed and stock
+        List<Drink> newDrinks = drinkService.getDrinkByIds(newDrinkIdsAndQuantity.keySet().stream().toList());
+        List<Product> newProducts = productService.getProductByIds(newProductIdsAndQuantity.keySet().stream().toList());
+        
+        
+        // 2.[Check new products and drinks id is existed] Start
+
+        Map<String, List<Long>> itemIsNotExisted= new HashMap<>();
+        if(newDrinks.size() < order.getDrinks().size()) {
+            itemIsNotExisted.put("drinks", newDrinkIdsAndQuantity.keySet().stream().filter(drinkId -> {
+                return !newDrinks.stream().map(Drink::getDrinkId).collect(Collectors.toList()).contains(drinkId);
+            }).toList());
+        }
+
+        if(newProducts.size() < order.getProducts().size()) {
+            itemIsNotExisted.put("products", newProductIdsAndQuantity.keySet().stream().filter(productId -> {
+                return !newProducts.stream().map(Product::getProductId).collect(Collectors.toList()).contains(productId);
+            }).toList());
+        }
+
+        if(itemIsNotExisted.size() > 0) {
+            throw new DataNotFoundException("Item not found", List.of(itemIsNotExisted));
+        }
+        // 2.[Check new products and drinks id is existed] End
+
+        // [Check new products and drinks are difference old products and drinks] Start
+        List<OrderItem> oldOrderItems = existingOrder.getOrderItems();
+            // [divide drink and product from orderItems to be easy to plus for stock] Start
+        List<OrderItem> oldDrinkOrderItems = oldOrderItems.stream().filter(item -> item.getDrinkId() != null).collect(Collectors.toList());
+        List<OrderItem> oldProducOrdertItems = oldOrderItems.stream().filter(item -> item.getProductId() != null).toList();
+            // [divide drink and product from orderItems to be easy to plus for stock] End
+
+        Map<Long, Long> oldDrinkIdsAndQuantity = oldDrinkOrderItems.stream().collect(Collectors.toMap(OrderItem::getDrinkId, OrderItem::getQuantity));
+        Map<Long, Long> oldProductIdsAndQuantity = oldProducOrdertItems.stream().collect(Collectors.toMap(OrderItem::getProductId, OrderItem::getQuantity));
+
+        Boolean isDifferenceItems = true;
+
+        if(oldDrinkIdsAndQuantity.size() == newDrinkIdsAndQuantity.size() && oldProductIdsAndQuantity.size() == newProductIdsAndQuantity.size()) {
+            if(oldDrinkIdsAndQuantity.equals(newDrinkIdsAndQuantity) && oldProductIdsAndQuantity.equals(newProductIdsAndQuantity)) {
+                isDifferenceItems = false;
+            }
+        }
+
+        List<OrderItem> newOrderItems = new ArrayList<>();
+
+
+        // [Check new products and drinks are difference old products and drinks] End
+
+        // If new products and drinks are difference old products and drinks then return quantity to old products and drinks
+        // Check stock new products and drinks
+        // Delete old orderItems
+        // then minus quantity to new products and drinks
+        if(isDifferenceItems) {
+            // 3.[get orderItems to return the quantity of Product or Drink] Start
+            // [get drink and product from id] Start
+            List<Drink> oldDrinks = drinkService.getDrinkByIds(oldDrinkIdsAndQuantity.keySet().stream().toList());
+            List<Product> oldProducts = productService.getProductByIds(oldProductIdsAndQuantity.keySet().stream().toList());
+            // [get drink and product from id] End
+
+            // [Plus Drink Stock, Product Stock and save to database]  Start
+            if(oldDrinks.size() > 0) {
+                oldDrinks.forEach(drink -> {
+                    Long quantity = oldDrinkIdsAndQuantity.get(drink.getDrinkId());
+                    drink.setStockQuantity(drink.getStockQuantity() + quantity);
+                });
+                
+                drinkService.saveDrinks(oldDrinks);
+            }
+            
+            if(oldProducts.size() > 0) {
+                oldProducts.forEach(product -> {
+                    Long quantity = oldProductIdsAndQuantity.get(product.getProductId());
+                    product.setStockQuantity(product.getStockQuantity() + quantity);
+                });
+                productService.saveProducts(oldProducts);
+            }
+                // [Plus Drink Stock, Product Stock and save to database]  End
+                // 3.[get orderItems to return the quantity of Product or Drink] End
+
+                // 4.[Delete order items existed] Start
+                    orderItemService.deleteOrderItemsByOrderId(orderId);
+                // 4.[Delete order items existed] End
+                // 5.[Check order new item is out of stock] Start
+                Map<String, List<Long>> itemIsOutOfStock = new HashMap<>();
+        
+                if(newDrinks.size() > 0) {
+        
+                    List<Long> drinkIsOutOfStockId = newDrinks.stream().filter(drink -> {
+                        Long quantity = newDrinkIdsAndQuantity.get(drink.getDrinkId());
+                        return drink.getStockQuantity() < quantity;
+                    }).map(Drink::getDrinkId).collect(Collectors.toList());
+        
+                    if(drinkIsOutOfStockId.size() > 0) {
+                        itemIsOutOfStock.put("drinks", drinkIsOutOfStockId);
+                    }
+                }
+        
+                if(newProducts.size() > 0) {
+                    List<Long> productIsOutOfStockId = newProducts.stream().filter(product -> {
+                        Long quantity = newProductIdsAndQuantity.get(product.getProductId());
+                        return product.getStockQuantity() < quantity;
+                    }).map(Product::getProductId).collect(Collectors.toList());
+                    if(productIsOutOfStockId.size() > 0) {   
+                        itemIsOutOfStock.put("products", productIsOutOfStockId);
+                    }
+                }
+        
+                if(itemIsOutOfStock.size() > 0) {
+                    throw new DataNotFoundException("Item out of stock", List.of(itemIsOutOfStock));
+                }
+        
+                // 5.[Check order new item is out of stock] End
+        
+                // 6. [Minus stock for new item] Start
+        
+                if(newDrinks.size() > 0) {
+                    newDrinks.forEach(drink -> {
+                        Long quantity = newDrinkIdsAndQuantity.get(drink.getDrinkId());
+        
+                        drink.setStockQuantity(drink.getStockQuantity() - quantity);
+                    });
+                    drinkService.saveDrinks(newDrinks);
+                }
+        
+                if(newProducts.size() > 0) {
+                    newProducts.forEach(product -> {
+                        Long quantity = newProductIdsAndQuantity.get(product.getProductId());
+                        product.setStockQuantity(product.getStockQuantity() - quantity);
+                    });
+                    productService.saveProducts(newProducts);
+                }
+                // 6. [Minus stock for new Item] End
+                 
+        
+                // 7. [Create new OrderItems] Start        
+                newDrinks.forEach(drink -> {
+                    Long quantity = newDrinkIdsAndQuantity.get(drink.getDrinkId());
+                    OrderItem newOrderItem = OrderItem.builder()
+                    .drinkId(drink.getDrinkId())
+                    .quantity(quantity)
+                    .orderId(orderId)
+                    .name(drink.getDrinkName())
+                    .price(drink.getPrice())
+                    .build();
+                    newOrderItems.add(newOrderItem);
+                });
+        
+                newProducts.forEach(product -> {
+                    Long quantity = newProductIdsAndQuantity.get(product.getProductId());
+                    OrderItem newOrderItem = OrderItem.builder()
+                    .productId(product.getProductId())
+                    .quantity(quantity)
+                    .orderId(orderId)
+                    .name(product.getProductName())
+                    .price(product.getPrice())
+                    .build();
+                    newOrderItems.add(newOrderItem);
+                });
+        
+                orderItemService.createOrderItems(newOrderItems);
+                // 7. [Create new OrderItems] End
+        }
+
+
+        // 8.[Update order status and updateTime] Start
+
+        if(order.getCustomerId() != existingOrder.getCustomer().getCustomerId()) {
+            Customer newCustomer = customerService.getCustomerById(order.getCustomerId());
+            existingOrder.setCustomer(newCustomer);
+            existingOrder.setCustomerName(newCustomer.getFullName());
+            existingOrder.setCustomerEmail(newCustomer.getEmail());
+            existingOrder.setCustomerPhone(newCustomer.getPhoneNumber());
+        }
+
+        existingOrder.setNotes(order.getNotes());
+        existingOrder.setUpdatedAt(new Date(System.currentTimeMillis()));
+        Order savedOrder = orderRepo.save(existingOrder); 
+        if(isDifferenceItems) {
+            savedOrder.setOrderItems(newOrderItems);
+        }
+        // 8.[Update order status and updateTime] End
+
+        return savedOrder;
     }
 }
 

@@ -26,4 +26,8 @@ public class OrderItemService {
         List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
         return orderItems;
     }
+
+    public void deleteOrderItemsByOrderId(Long orderId) {
+        orderItemRepo.deleteAllByOrderId(orderId);
+    }
 }

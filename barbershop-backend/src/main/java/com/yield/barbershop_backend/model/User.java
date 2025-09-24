@@ -1,6 +1,8 @@
 package com.yield.barbershop_backend.model;
 
-import java.sql.Date;
+
+
+import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -31,7 +33,6 @@ public class User implements AccountInterface {
     @Column(updatable = false)
     private Date createdAt;
 
-    
     private Date updatedAt;
 
 

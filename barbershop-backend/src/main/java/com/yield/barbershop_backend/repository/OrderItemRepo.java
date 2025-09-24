@@ -9,5 +9,5 @@ import com.yield.barbershop_backend.model.OrderItem;
 public interface OrderItemRepo extends JpaRepository<OrderItem, Long> {
 
     List<OrderItem> findByOrderId(Long orderId);
-    
+    void deleteAllByOrderId(Long orderId);
 } 
