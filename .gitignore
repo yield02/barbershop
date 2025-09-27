@@ -1,6 +1,7 @@
 HELP.md
 target/
 .barbershop-backend/mvn/wrapper/maven-wrapper.jar
+.barbershop-backend/src/main/resources/application.properties
 !**/src/main/**/target/
 !**/src/test/**/target/
 
@@ -31,3 +32,4 @@ build/
 
 ### VS Code ###
 .vscode/
+barbershop-backend/src/main/resources/application.properties
