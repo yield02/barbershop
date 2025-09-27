@@ -35,6 +35,7 @@ public class Order {
     private String status;
     private String notes;
 
+
     @Column(updatable = false)
     private Date createdAt = new Date(System.currentTimeMillis());
 
@@ -42,12 +43,18 @@ public class Order {
 
 
     
+    @Column(name = "customer_id")
+    private Long customerId;
+
+    @Column(name = "user_id")
+    private Long userId;
+
     @ManyToOne
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id", insertable = false, updatable = false)
     private Customer customer;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 
     @OneToMany(mappedBy = "order")

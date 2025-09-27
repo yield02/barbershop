@@ -71,6 +71,11 @@ public class User implements AccountInterface {
     public Long getId() {
         return this.userId;
     }
+
+    @Override
+    public String getRole() {
+        return "ROLE_" + this.role.toUpperCase();
+    }
  
 }
 

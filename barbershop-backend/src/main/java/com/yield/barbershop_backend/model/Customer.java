@@ -37,7 +37,7 @@ public class Customer implements AccountInterface {
 
     @Override
     public String getRole() {
-        return "CUSTOMER";
+        return "ROLE_CUSTOMER";
     }
 
     @Override

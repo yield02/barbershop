@@ -23,7 +23,7 @@ public class AccountPrincipal<T extends AccountInterface> implements UserDetails
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + account.getRole().toString().toUpperCase()));
+        return Collections.singletonList(new SimpleGrantedAuthority(account.getRole().toString().toUpperCase()));
     }
 
     @Override

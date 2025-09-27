@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ import com.yield.barbershop_backend.dto.order.OrderProductItemCreateDTO;
 import com.yield.barbershop_backend.dto.order.OrderUpdateDTO;
 import com.yield.barbershop_backend.exception.DataConflictException;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
+import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.Customer;
 import com.yield.barbershop_backend.model.Drink;
 import com.yield.barbershop_backend.model.Order;
@@ -67,9 +70,15 @@ public class OrderService {
     }
 
     @Transactional
-    public Order createOrder(OrderCreateDTO order) {
+    public Order createOrder(OrderCreateDTO order, Boolean isAdmin) {
         
-        User user = userService.getUserById(order.getUserId());
+        
+        User user = null;
+        
+        if(isAdmin) {
+            user = userService.getUserById(order.getUserId());
+        }
+        
         
         Customer customer = customerService.getCustomerById(order.getCustomerId());
         
@@ -182,7 +191,7 @@ public class OrderService {
         // Create and Save Order
         Order orderCreate = Order.builder()
             .customer(customer)
-            .user(user)
+            .userId(user.getUserId())
             .notes(order.getNotes())
             .customerName(customer.getFullName())
             .customerEmail(customer.getEmail())
@@ -231,12 +240,16 @@ public class OrderService {
     }
     
     @Transactional
-    public void updateOrderStatus(Long orderId, String status) {
+    public void updateOrderStatus(Long orderId, String status, Long staffId) {
         // Pending, Processcing, Completed, Cancelled
         Order order = orderRepo.findById(orderId).orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
         
         if(order.getStatus().equals("Completed") || order.getStatus().equals("Cancelled")) {
             throw new DataConflictException("Cannot update status of order with status: " + order.getStatus());
+        }
+
+        if(status.equals("Completed")) {
+            order.setUserId(staffId);
         }
 
         order.setStatus(status);
@@ -483,6 +496,66 @@ public class OrderService {
         // 8.[Update order status and updateTime] End
 
         return savedOrder;
+    }
+
+
+    @Transactional
+    public void cancelOrder(Long orderId, Long ownerId, Boolean isAdmin) {
+        
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
+
+        // 1.[Check order status] START
+        if(order.getStatus().equals("Cancelled") || order.getStatus().equals("Completed")) {
+            throw new DataConflictException("Cannot update status of order with status: " + order.getStatus());
+        }
+        // 1.[Check order status] END
+
+        // 2.[Check order owner or staff] START
+        if(!isAdmin) {
+            if(!order.getCustomer().getId().equals(ownerId)) {
+                throw new AccessDeniedException("You don't have permission to cancel this order");
+            }
+        }
+        // 2.[Check order owner or staff] END
+
+        // 3. [Return quantity to stock] START
+
+        List<OrderItem> orderItems = order.getOrderItems();
+        
+        List<Long> drinkIds = orderItems.stream().filter(item -> item.getDrinkId() != null).map(OrderItem::getDrinkId).collect(Collectors.toList());
+        List<Long> productIds = orderItems.stream().filter(item -> item.getProductId() != null).map(OrderItem::getProductId).collect(Collectors.toList());
+
+        List<Drink> drinks = drinkService.getDrinkByIds(drinkIds);
+        List<Product> products = productService.getProductByIds(productIds);
+
+        drinks.forEach(drink -> {
+            Long quantity = orderItems.stream()
+                .filter(item -> item.getDrinkId() != null && item.getDrinkId().equals(drink.getDrinkId()))
+                .map(OrderItem::getQuantity)
+                .findFirst()
+                .orElse(0L);
+            drink.setStockQuantity(drink.getStockQuantity() + quantity);
+        });
+        drinkService.saveDrinks(drinks);
+
+        products.forEach(product -> {
+            Long quantity = orderItems.stream()
+                .filter(item -> item.getProductId() != null && item.getProductId().equals(product.getProductId()))
+                .map(OrderItem::getQuantity)
+                .findFirst()
+                .orElse(0L);
+            product.setStockQuantity(product.getStockQuantity() + quantity);
+        });
+        productService.saveProducts(products);
+
+        // 3. [Return quantity to stock] END
+
+
+        // 4.[Update order status and updateTime] START
+        order.setStatus("Cancelled");
+        order.setUpdatedAt(new Date(System.currentTimeMillis()));        
+        orderRepo.save(order);
+        // 4.[Update order status and updateTime] END
     }
 }
 
