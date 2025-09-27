@@ -92,7 +92,7 @@ public class OrderController {
         AccountPrincipal accountPrincipal = (AccountPrincipal) authentication.getPrincipal();
         Long ownerId = accountPrincipal.getId();
 
-        orderService.updateOrderStatus(orderId, orderUpdateStatusDTO.getStatus());
+        orderService.updateOrderStatus(orderId, orderUpdateStatusDTO.getStatus(), ownerId);
         return ResponseEntity.noContent().build();
     }
 
