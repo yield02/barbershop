@@ -1,6 +1,8 @@
 package com.yield.barbershop_backend.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -15,8 +17,11 @@ import com.yield.barbershop_backend.dto.user.UserFilterDTO;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
 import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.User;
+import com.yield.barbershop_backend.model.UserVerification;
 import com.yield.barbershop_backend.repository.UserRepo;
+import com.yield.barbershop_backend.repository.UserVerificationRepo;
 import com.yield.barbershop_backend.specification.UserSpecification;
+import com.yield.barbershop_backend.util.EmailUltil;
 
 import jakarta.transaction.Transactional;
 
@@ -27,6 +32,14 @@ public class UserService {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private UserVerificationRepo userVerificationRepo;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private EmailUltil emailUltil;
 
     public Page<User> getUsersByFilter(UserFilterDTO filter) {
         Pageable page = PageRequest.of(filter.getPage(), filter.getPageSize());
@@ -62,5 +75,65 @@ public class UserService {
     }
 
 
+
+    @Transactional
+    public void sendUserEmailVerification(Long userId) {
+        
+        User user = userRepo.findById(userId)
+        .orElseThrow(() -> new UsernameNotFoundException("Email not found"));
+        
+        if(user.getEmail() == null) {
+            throw new DataNotFoundException("Email not found");
+        }
+
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(15);
+
+        UserVerification userVerification = userVerificationRepo.findByUserIdAndType(user.getId(), UserVerification.VerificationType.EMAIL);
+
+        if(userVerification != null) {
+            Boolean isVerified = userVerification.getVerified();
+            if(isVerified) {
+                throw new DataNotFoundException("Email already verified");
+            }
+            else if(userVerification.getExpiry_at().isAfter(LocalDateTime.now())) {
+                throw new DataNotFoundException("Verification email already sent");
+            }
+        }
+
+        else {
+            userVerification = new UserVerification();
+            userVerification.setUserId(user.getId());
+            userVerification.setType(UserVerification.VerificationType.EMAIL);
+            userVerification.setVerified(false);
+            userVerification.setVerified_at(null);
+        }
+        
+        userVerification.setToken_hash(token);
+        userVerification.setExpiry_at(expiryTime);
+        userVerificationRepo.save(userVerification);
+
+        String verificationLink = emailUltil.getAppBaseUrl() + "/auth/staff/verify-email?token=" + token + "&userId=" + user.getId();
+        String text = emailUltil.getStaffVerificationTextHtml(user.getFullName(), verificationLink, expiryTime);
+        emailService.sendEmail(user.getEmail(), "[Barbershop] Staff Email Verification", text);
+
+    }
+
+    @Transactional
+    public void verifyUserEmail(Long userId, String token) {
+
+        UserVerification userVerification = userVerificationRepo.findByUserIdAndType(userId, UserVerification.VerificationType.EMAIL);
+        
+        if(userVerification.getToken_hash().equals(token)) {
+            userVerification.setVerified(true);
+            userVerification.setVerified_at(LocalDateTime.now());
+            userVerificationRepo.save(userVerification);
+        }
+        else {
+            userVerificationRepo.delete(userVerification);
+            throw new DataNotFoundException("Verification token is incorrect");
+        }
+
+    }
 
 }

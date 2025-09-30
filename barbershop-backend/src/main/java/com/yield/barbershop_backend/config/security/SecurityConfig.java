@@ -43,9 +43,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
                 .anyRequest().authenticated()
-            ).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
-
+            )
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .httpBasic(httpBasicCustomizer -> httpBasicCustomizer.disable())
+            .formLogin(customer -> customer.disable());
 
         return http.build();
     }

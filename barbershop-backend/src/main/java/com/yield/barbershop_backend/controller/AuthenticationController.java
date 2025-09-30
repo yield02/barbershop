@@ -11,20 +11,24 @@ import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.Customer;
 import com.yield.barbershop_backend.model.User;
 import com.yield.barbershop_backend.service.RefreshTokenService;
+import com.yield.barbershop_backend.service.UserService;
 import com.yield.barbershop_backend.util.JwtUtil;
 
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 
@@ -42,9 +46,12 @@ public class AuthenticationController {
     private RefreshTokenService refreshTokenService;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private JwtUtil jwtUtil;
 
-    @PostMapping("/login/customer")
+    @PostMapping("/customer/login")
     public ResponseEntity<ApiResponse<Void>> LoginCustomer(@RequestBody @Validated LoginDTO loginDTO, HttpServletResponse response) {
         
 
@@ -75,7 +82,7 @@ public class AuthenticationController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/login/staff")
+    @PostMapping("/staff/login")
     public ResponseEntity<ApiResponse<Void>> LoginUser(@RequestBody @Validated LoginDTO loginDTO, HttpServletResponse response) {
 
         Authentication authentication = userAuthenicationProvider.authenticate(
@@ -86,8 +93,6 @@ public class AuthenticationController {
         }
 
         AccountPrincipal<User> accountPrincipal = (AccountPrincipal<User>) authentication.getPrincipal();
-
-        System.out.println(accountPrincipal.toString());
 
         TokenDataEntity tokenData = new TokenDataEntity();
         tokenData.setEmail(accountPrincipal.getEmail());
@@ -105,7 +110,28 @@ public class AuthenticationController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/staff/verify-email")
+    public ResponseEntity<Void> verifyEmailStaff(@RequestParam String token, @RequestParam Long userId) {
+        userService.verifyUserEmail(userId, token);
+       return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'STAFF')")
+    @GetMapping("/staff/request-email-verification")
+    public ResponseEntity<Void> requestStaffEmailVerification() {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        AccountPrincipal<User> accountPrincipal = (AccountPrincipal<User>) authentication.getPrincipal();
+
+        Long accountId = accountPrincipal.getId();
+
+        userService.sendUserEmailVerification(accountId);
+
+        return ResponseEntity.noContent().build();
+    }
     
+        
 
 
 }
