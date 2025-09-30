@@ -6,5 +6,6 @@ import com.yield.barbershop_backend.model.CustomerVerification;
 
 public interface CustomerVerificationRepo extends JpaRepository<CustomerVerification, Long> {
 
+    CustomerVerification findByCustomerIdAndType(Long customerId, CustomerVerification.VerificationType type);
     
 } 

@@ -39,6 +39,8 @@ public class CustomerAuthenticationProvider implements AuthenticationProvider {
         if (userDetails == null || !passwordEncoder.matches(password, userDetails.getPassword())) {
             throw new UsernameNotFoundException("Invalid password");
         }
+
+        System.out.println(authentication.getAuthorities());
         
         return new UsernamePasswordAuthenticationToken(userDetails, authentication.getCredentials(), userDetails.getAuthorities());
     }

@@ -10,6 +10,7 @@ import com.yield.barbershop_backend.dto.TokenDataEntity;
 import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.Customer;
 import com.yield.barbershop_backend.model.User;
+import com.yield.barbershop_backend.service.CustomerService;
 import com.yield.barbershop_backend.service.RefreshTokenService;
 import com.yield.barbershop_backend.service.UserService;
 import com.yield.barbershop_backend.util.JwtUtil;
@@ -30,11 +31,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
-
-
 @RestController
 @RequestMapping("/auth")
 public class AuthenticationController {
+
+    private final CustomerService customerService;
 
     @Autowired
     private CustomerAuthenticationProvider customerAuthenticationProvider;
@@ -50,6 +51,10 @@ public class AuthenticationController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    AuthenticationController(CustomerService customerService) {
+        this.customerService = customerService;
+    }
 
     @PostMapping("/customer/login")
     public ResponseEntity<ApiResponse<Void>> LoginCustomer(@RequestBody @Validated LoginDTO loginDTO, HttpServletResponse response) {
@@ -130,6 +135,32 @@ public class AuthenticationController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/customer/request-email-verification")
+    public ResponseEntity<Void> requestCustomerEmailVerification() {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        AccountPrincipal<Customer> accountPrincipal = (AccountPrincipal<Customer>) authentication.getPrincipal();
+
+        Long accountId = accountPrincipal.getId();
+
+        customerService.sendCustomerEmailVerification(accountId);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    
+    @GetMapping("/customer/verify-email")
+    public ResponseEntity<Void> verifyEmailCustomer(@RequestParam String token, @RequestParam Long customerId) {
+    
+        customerService.verifyCustomerEmail(customerId, token);
+
+        return ResponseEntity.noContent().build();
+    }
+    
+    
     
         
 

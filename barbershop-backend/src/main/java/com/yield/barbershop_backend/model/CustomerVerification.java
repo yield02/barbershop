@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import jakarta.annotation.Generated;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,6 +21,8 @@ public class CustomerVerification {
     private Long id;
     private Long customerId;
     private String token_hash;
+
+    @Enumerated(EnumType.STRING)
     private VerificationType type;
     private Boolean verified;
     private LocalDateTime verified_at;

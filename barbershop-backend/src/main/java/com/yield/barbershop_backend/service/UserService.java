@@ -80,7 +80,7 @@ public class UserService {
     public void sendUserEmailVerification(Long userId) {
         
         User user = userRepo.findById(userId)
-        .orElseThrow(() -> new UsernameNotFoundException("Email not found"));
+        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         
         if(user.getEmail() == null) {
             throw new DataNotFoundException("Email not found");
@@ -124,6 +124,11 @@ public class UserService {
 
         UserVerification userVerification = userVerificationRepo.findByUserIdAndType(userId, UserVerification.VerificationType.EMAIL);
         
+        if(userVerification.getExpiry_at().isBefore(LocalDateTime.now())) {
+            userVerificationRepo.delete(userVerification);
+            throw new DataNotFoundException("Verification token expired");
+        }
+
         if(userVerification.getToken_hash().equals(token)) {
             userVerification.setVerified(true);
             userVerification.setVerified_at(LocalDateTime.now());
