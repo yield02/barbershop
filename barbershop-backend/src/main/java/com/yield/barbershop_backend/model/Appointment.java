@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import lombok.Data;
 
 @Entity(name = "appointments")
@@ -63,6 +64,10 @@ public class Appointment {
     @OneToMany(mappedBy = "appointment")
     @JsonManagedReference
     private List<AppointmentService> appointmentServices;
+
+    @OneToOne(mappedBy = "appointment")
+    @JsonManagedReference
+    private Payment payment;
 
 }
 

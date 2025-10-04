@@ -2,6 +2,8 @@ package com.yield.barbershop_backend.model;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -51,10 +53,12 @@ public class Payment {
     User user;
 
     @OneToOne(targetEntity = Appointment.class)
+    @JsonBackReference
     @JoinColumn(name = "appointment_id", insertable = false, updatable = false)
     Appointment appointment;
 
     @OneToOne(targetEntity = Order.class)
+    @JsonBackReference
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
     Order order;
 
