@@ -1,10 +1,15 @@
 package com.yield.barbershop_backend.model;
 
+import java.util.Date;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import lombok.Data;
@@ -15,11 +20,14 @@ public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long paymentId;
-    String paymentDate;
+    Date paymentDate;
     Double amount;
     String paymentMethod;
     String transactionId;
-    String status;
+
+    @Enumerated(EnumType.STRING)
+    PaymentStatus status;
+
     String notes;
 
     @Column(name = "customer_id")
@@ -33,18 +41,31 @@ public class Payment {
 
     @Column(name = "order_id")
     Long orderId;
-
+    
     @ManyToOne(targetEntity = Customer.class)
+    @JoinColumn(name = "customer_id", insertable = false, updatable = false)
     Customer customer;
 
     @ManyToOne(targetEntity = User.class)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     User user;
 
     @OneToOne(targetEntity = Appointment.class)
+    @JoinColumn(name = "appointment_id", insertable = false, updatable = false)
     Appointment appointment;
 
     @OneToOne(targetEntity = Order.class)
+    @JoinColumn(name = "order_id", insertable = false, updatable = false)
     Order order;
+
+
+
+    public enum PaymentStatus {
+        Successful,
+        Failed,
+        Refunded,
+        Pending
+    }
 
 }
 
