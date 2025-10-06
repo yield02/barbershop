@@ -6,15 +6,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.rsocket.RSocketProperties.Server.Spec;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,13 +24,13 @@ import com.yield.barbershop_backend.dto.order.OrderProductItemCreateDTO;
 import com.yield.barbershop_backend.dto.order.OrderUpdateDTO;
 import com.yield.barbershop_backend.exception.DataConflictException;
 import com.yield.barbershop_backend.exception.DataNotFoundException;
-import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.Customer;
 import com.yield.barbershop_backend.model.Drink;
 import com.yield.barbershop_backend.model.Order;
 import com.yield.barbershop_backend.model.OrderItem;
 import com.yield.barbershop_backend.model.Product;
 import com.yield.barbershop_backend.model.User;
+import com.yield.barbershop_backend.model.Order.OrderStatus;
 import com.yield.barbershop_backend.repository.OrderRepo;
 import com.yield.barbershop_backend.specification.OrderSpecification;
 
@@ -67,6 +67,10 @@ public class OrderService {
     public Page<Order> getOrdersByFilter(OrderFilterDTO filter) {
         Pageable page = PageRequest.of(filter.getPage(), filter.getPageSize());
         return orderRepo.findAll(OrderSpecification.getOrderWithFilter(filter), page);
+    }
+
+    public List<Order> getOrdersWithSpecification(Specification<Order> spec) {
+        return orderRepo.findAll(spec);
     }
 
     @Transactional
@@ -197,7 +201,7 @@ public class OrderService {
             .customerEmail(customer.getEmail())
             .customerPhone(customer.getPhoneNumber())
             .totalAmount(totalAmount)
-            .status("Pending")
+            .status(OrderStatus.Pending)
             .createdAt(new Date(System.currentTimeMillis()))
             .updatedAt(new Date(System.currentTimeMillis()))
             .build();
@@ -240,15 +244,15 @@ public class OrderService {
     }
     
     @Transactional
-    public void updateOrderStatus(Long orderId, String status, Long staffId) {
+    public void updateOrderStatus(Long orderId, OrderStatus status, Long staffId) {
         // Pending, Processcing, Completed, Cancelled
         Order order = orderRepo.findById(orderId).orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
         
-        if(order.getStatus().equals("Completed") || order.getStatus().equals("Cancelled")) {
+        if(order.getStatus().equals(OrderStatus.Completed) || order.getStatus().equals(OrderStatus.Cancelled)) {
             throw new DataConflictException("Cannot update status of order with status: " + order.getStatus());
         }
 
-        if(status.equals("Completed")) {
+        if(status.equals(OrderStatus.Completed)) {
             order.setUserId(staffId);
         }
 
@@ -258,7 +262,7 @@ public class OrderService {
         // Save order
         orderRepo.save(order);
 
-        if(!order.getStatus().equals("Cancelled")) {
+        if(!order.getStatus().equals(OrderStatus.Cancelled)) {
             return ;
         }
         
@@ -302,7 +306,7 @@ public class OrderService {
 
 
         // 1.[Check order status] Start
-        if(existingOrder.getStatus().equals("Completed") || existingOrder.getStatus().equals("Cancelled")) {
+        if(existingOrder.getStatus().equals(OrderStatus.Completed) || existingOrder.getStatus().equals(OrderStatus.Cancelled)) {
             throw new DataConflictException("Cannot update order with status: " + existingOrder.getStatus());
         }
         // 1.[Check order status] End
@@ -505,7 +509,7 @@ public class OrderService {
         Order order = orderRepo.findById(orderId).orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
 
         // 1.[Check order status] START
-        if(order.getStatus().equals("Cancelled") || order.getStatus().equals("Completed")) {
+        if(order.getStatus().equals(OrderStatus.Cancelled) || order.getStatus().equals(OrderStatus.Completed)) {
             throw new DataConflictException("Cannot update status of order with status: " + order.getStatus());
         }
         // 1.[Check order status] END
@@ -552,7 +556,7 @@ public class OrderService {
 
 
         // 4.[Update order status and updateTime] START
-        order.setStatus("Cancelled");
+        order.setStatus(OrderStatus.Cancelled);
         order.setUpdatedAt(new Date(System.currentTimeMillis()));        
         orderRepo.save(order);
         // 4.[Update order status and updateTime] END

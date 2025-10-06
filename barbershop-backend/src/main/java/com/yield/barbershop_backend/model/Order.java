@@ -33,7 +33,7 @@ public class Order {
     private String customerPhone;
     private String customerEmail;
     private Double totalAmount;
-    private String status;
+    private OrderStatus status;
     private String notes;
 
 
@@ -65,4 +65,9 @@ public class Order {
     @OneToOne(mappedBy = "order")
     @JsonManagedReference
     private Payment payment;
+    
+
+    public enum OrderStatus {
+        Pending, Processing, Completed, Cancelled
+    }
 }
