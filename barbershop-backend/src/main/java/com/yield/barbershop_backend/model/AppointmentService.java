@@ -18,7 +18,10 @@ public class AppointmentService {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long appointmentServiceId;
-    private Double price;
+    private Double originalPrice;
+    private Double finalPrice;
+    private Double discountAmount;
+    private String serviceName;
 
     @Column(name = "appointment_id")
     private Long appointmentId;

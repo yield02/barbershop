@@ -36,4 +36,10 @@ public class ServiceSpecification {
         };
     }
 
+    public static Specification<Service> getActiveService() {
+        return (root, query, criteriaBuilder) -> {
+            return criteriaBuilder.equal(root.get("isActive"), true);
+        };
+    }
+
 }

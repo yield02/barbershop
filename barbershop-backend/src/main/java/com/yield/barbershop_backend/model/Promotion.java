@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,11 +22,14 @@ public class Promotion {
     private Long promotionId;
     private String promotionName;
     private String description;
+    private Long maxApplicableQuantity;
     private Double discountPercentage;
     private Double discountAmount;
     private Date startDate;
     private Date endDate;
     private Boolean isActive;
+
+    @Column(updatable = false)
     private Date createdAt;
     private Date updatedAt;
 
@@ -33,7 +37,6 @@ public class Promotion {
     @OneToMany(mappedBy = "promotion")
     @JsonManagedReference
     private List<PromotionItem> promotionItems; // List of items associated with the promotion
-
 }
 
 // CREATE TABLE Promotions (

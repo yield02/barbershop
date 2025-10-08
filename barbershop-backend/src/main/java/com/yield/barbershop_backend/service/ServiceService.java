@@ -17,7 +17,6 @@ import com.yield.barbershop_backend.model.Service;
 import com.yield.barbershop_backend.repository.ServiceRepo;
 import com.yield.barbershop_backend.specification.ServiceSpecification;
 
-import jakarta.transaction.Transactional;
 
 @org.springframework.stereotype.Service
 public class ServiceService {
@@ -56,6 +55,10 @@ public class ServiceService {
         // Truy vấn 1 lần duy nhất tất cả các id tồn tại
         List<Service> existedIds = serviceRepo.findExistedIds(serviceIds);
         return existedIds;
+    }
+
+    public List<Service> getActiveServicesByIds(List<Long> serviceIds) {
+        return serviceRepo.findActiveServiceByIds(serviceIds, ServiceSpecification.getActiveService());
     }
 
 

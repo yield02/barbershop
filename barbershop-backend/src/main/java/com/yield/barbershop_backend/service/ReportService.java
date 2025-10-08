@@ -6,13 +6,19 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import org.hibernate.sql.ast.tree.expression.Over;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.yield.barbershop_backend.dto.report.OverviewRevenueDTO;
+import com.yield.barbershop_backend.dto.report.CategoryRevenueDTO;
+import com.yield.barbershop_backend.model.Order;
+import com.yield.barbershop_backend.model.OrderItem;
 import com.yield.barbershop_backend.model.Payment;
+import com.yield.barbershop_backend.model.Payment.PaymentStatus;
+import com.yield.barbershop_backend.specification.OrderSpecification;
 import com.yield.barbershop_backend.util.DateAndTimeUltil;
 
 import jakarta.transaction.Transactional;
@@ -23,6 +29,9 @@ public class ReportService {
 
     @Autowired
     private PaymentService paymentService;
+
+    @Autowired
+    private OrderService orderService;
     
     @Transactional
     public OverviewRevenueDTO getDateOverviewRevenue(Date date) {
@@ -250,4 +259,28 @@ public class ReportService {
         overviewRevenueDTO.setRevenueGrowth(revenueGrowth);
         return overviewRevenueDTO;
     }
+
+
+
+    // public CategoryRevenueDTO getRevenueByCategory(Date startDate, Date endDate) {
+
+
+
+    //     List<Order> orders = orderService.getOrdersWithSpecification(OrderSpecification.getOrderSuccessAndDateBetween(startDate, endDate));
+
+    //     List<OrderItem> drinkItems = orders.parallelStream()
+    //         .filter(order -> order.getPayment().getStatus().equals(Payment.PaymentStatus.Successful))
+    //         .flatMap(order -> order.getOrderItems().stream()).filter(item -> item.getDrinkId() != null)
+    //         .collect(Collectors.toList());
+    //     List<OrderItem> productItems = orders.parallelStream()
+    //         .filter(order -> order.getPayment().getStatus().equals(Payment.PaymentStatus.Successful))
+    //         .flatMap(order -> order.getOrderItems().stream()).filter(item -> item.getProductId() != null)
+    //         .collect(Collectors.toList());
+        
+    //     Double netDrinkRevenue = drinkItems.parallelStream().mapToDouble(OrderItem::getPrice).sum();
+    //     Double netProductRevenue = productItems.parallelStream().mapToDouble(OrderItem::getPrice).sum();
+        
+
+    //     return null;
+    // }
 }

@@ -25,7 +25,10 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long orderItemId;
     private Long quantity;
-    private Double price;
+    private Double originalPrice; // price before discount
+    private Double finalPrice; // price after discount
+    private Double discountAmount; // discount amount
+    
     private String name;
     
     @Column(name = "product_id")
@@ -54,4 +57,5 @@ public class OrderItem {
     @JsonBackReference
     private Order order;
 
+    
 }

@@ -2,6 +2,7 @@ package com.yield.barbershop_backend.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,21 +19,35 @@ public class PromotionItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long promotionItemId;
 
+
+    @Column(name = "promotion_id")
+    private Long promotionId;
+
+    @Column(name = "service_id")
+    private Long serviceId;
+
+    @Column(name = "product_id")
+    private Long productId;
+    
+    @Column(name = "drink_id")
+    private Long drinkId;
+
+
     @ManyToOne
-    @JoinColumn(name = "promotion_id")
+    @JoinColumn(name = "promotion_id", insertable = false, updatable = false)
     @JsonBackReference
     private Promotion promotion;
 
     @ManyToOne
-    @JoinColumn(name = "service_id")
+    @JoinColumn(name = "service_id", insertable = false, updatable = false)
     private Service service;
 
     @ManyToOne
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;
 
     @ManyToOne
-    @JoinColumn(name = "drink_id")
+    @JoinColumn(name = "drink_id", insertable = false, updatable = false)
     private Drink drink;
 }
 
