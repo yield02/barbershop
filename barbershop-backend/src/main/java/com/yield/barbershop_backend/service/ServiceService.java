@@ -58,7 +58,7 @@ public class ServiceService {
     }
 
     public List<Service> getActiveServicesByIds(List<Long> serviceIds) {
-        return serviceRepo.findActiveServiceByIds(serviceIds, ServiceSpecification.getActiveService());
+        return serviceRepo.findExistedIds(serviceIds);
     }
 
 

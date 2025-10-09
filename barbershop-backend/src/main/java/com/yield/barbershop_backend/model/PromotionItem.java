@@ -11,7 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Data;
 
-@Entity(name="promotion_items")
+@Entity(name="promotionitems")
 @Data
 public class PromotionItem {
 
