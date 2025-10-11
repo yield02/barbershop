@@ -1,7 +1,6 @@
 package com.yield.barbershop_backend.repository;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,6 +18,6 @@ JpaSpecificationExecutor<Promotion>
 
     
     @Query("SELECT p FROM promotions p WHERE p.promotionId IN :promotionIds")
-    Map<Long, Promotion> getActivePromotionsByIds(List<Long> promotionIds, Specification<Promotion> spec);
+    List<Promotion> getActivePromotionsByIds(List<Long> promotionIds, Specification<Promotion> spec);
     
 }
