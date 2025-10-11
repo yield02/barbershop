@@ -22,6 +22,7 @@ public class UpdateAppointmentDTO {
     private Long userId;
     @NotBlank(message = "Start time is required")
     private LocalDateTime startTime;
+
     @NotEmpty(message = "Service IDs are required")
     private ArrayList<Long> serviceIds;
     @NotNull(message = "Notes are required")

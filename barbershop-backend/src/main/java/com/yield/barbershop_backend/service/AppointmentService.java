@@ -96,10 +96,13 @@ public class  AppointmentService {
 
         List<Long> promotionIds = promotionItems.values().stream().map(PromotionItem::getPromotionId).collect(Collectors.toList());
 
-        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(promotionIds);
+        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(promotionIds).stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
 
         Double totalDiscountAmount = services.stream().mapToDouble(service -> {
             PromotionItem promotionItem = promotionItems.get(service.getServiceId());
+
+            if(promotionItem == null) return 0.0;
+
             Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
             if(promotion != null) {
                 if(promotion.getDiscountAmount() != null) {
@@ -110,6 +113,7 @@ public class  AppointmentService {
                     return service.getPrice() * promotion.getDiscountPercentage() / 100;
                 }
             }
+
             return 0.0;
         }).sum();
 
@@ -133,7 +137,7 @@ public class  AppointmentService {
         // Create Appointment
         Appointment newAppointment = new Appointment();
  
-        newAppointment.setCustomerName(customer.getFullName());
+        newAppointment.setCustomerName(customer.getFullName()); 
         newAppointment.setCustomerPhone(customer.getPhoneNumber());
         newAppointment.setCustomerEmail(customer.getEmail());
         newAppointment.setCustomerId(customer.getCustomerId());
@@ -158,16 +162,22 @@ public class  AppointmentService {
             Double finalPrice = originalPrice;
 
             PromotionItem promotionItem = promotionItems.get(service.getServiceId());
-            Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
-            if(promotion != null) {
-                if(promotion.getDiscountAmount() != null) {
-                    discountAmount = promotion.getDiscountAmount();
-                }
 
-                if(promotion.getDiscountPercentage() != null) {
-                    discountAmount = service.getPrice() * promotion.getDiscountPercentage() / 100;
+            if(promotionItem != null) {
+                Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
+                if(promotion != null) {
+                    if(promotion.getDiscountAmount() != null) {
+                        discountAmount = promotion.getDiscountAmount();
+                    }
+
+                    if(promotion.getDiscountPercentage() != null) {
+                        discountAmount = service.getPrice() * promotion.getDiscountPercentage() / 100;
+                    }
+
+                    finalPrice = originalPrice - discountAmount;
                 }
             }
+            
             com.yield.barbershop_backend.model.AppointmentService appointmentService = new com.yield.barbershop_backend.model.AppointmentService();
             appointmentService.setAppointmentId(savedAppointment.getAppointmentId());
             appointmentService.setServiceId(service.getServiceId());
@@ -225,10 +235,16 @@ public class  AppointmentService {
 
         List<Long> promotionIds = promotionItems.values().stream().map(PromotionItem::getPromotionId).collect(Collectors.toList());
 
-        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(promotionIds);
+        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(promotionIds)
+        .stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
 
         Double totalDiscountAmount = services.stream().mapToDouble(service -> {
             PromotionItem promotionItem = promotionItems.get(service.getServiceId());
+
+            if(promotionItem == null) {
+                return 0.0;
+            }
+
             Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
             if(promotion != null) {
                 if(promotion.getDiscountAmount() != null) {
@@ -238,6 +254,7 @@ public class  AppointmentService {
                 if(promotion.getDiscountPercentage() != null) {
                     return service.getPrice() * promotion.getDiscountPercentage() / 100;
                 }
+                
             }
             return 0.0;
         }).sum();
@@ -282,16 +299,23 @@ public class  AppointmentService {
             Double finalPrice = originalPrice;
 
             PromotionItem promotionItem = promotionItems.get(service.getServiceId());
-            Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
-            if(promotion != null) {
-                if(promotion.getDiscountAmount() != null) {
-                    discountAmount = promotion.getDiscountAmount();
-                }
 
-                if(promotion.getDiscountPercentage() != null) {
-                    discountAmount = service.getPrice() * promotion.getDiscountPercentage() / 100;
+            if(promotionItem != null) {
+                Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
+                if(promotion != null) {
+                    if(promotion.getDiscountAmount() != null) {
+                        discountAmount = promotion.getDiscountAmount();
+                    }
+
+                    if(promotion.getDiscountPercentage() != null) {
+                        discountAmount = service.getPrice() * promotion.getDiscountPercentage() / 100;
+                    }
+
+                    finalPrice = originalPrice - discountAmount;
                 }
             }
+
+            
             com.yield.barbershop_backend.model.AppointmentService appointmentService = new com.yield.barbershop_backend.model.AppointmentService();
             appointmentService.setAppointmentId(savedAppointment.getAppointmentId());
             appointmentService.setServiceId(service.getServiceId());

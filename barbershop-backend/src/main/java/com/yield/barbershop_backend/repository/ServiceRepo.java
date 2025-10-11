@@ -22,4 +22,7 @@ JpaRepository<Service, Long>,
    @Query("SELECT s FROM services s WHERE s.serviceId IN :serviceIds AND s.isActive = true")
    List<Service> findExistedIds(List<Long> serviceIds);
 
+
+   @Query("SELECT s FROM services s WHERE s.serviceId IN :serviceIds AND s.isActive = true")
+   List<Service> getActiveServicesByIds(List<Long> serviceIds);
 }
