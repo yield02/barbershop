@@ -11,6 +11,7 @@ import com.yield.barbershop_backend.dto.order.OrderUpdateDTO;
 import com.yield.barbershop_backend.dto.order.OrderUpdateStatusDTO;
 import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.Order;
+import com.yield.barbershop_backend.model.Order.OrderStatus;
 import com.yield.barbershop_backend.service.OrderService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,7 @@ public class OrderController {
             new ApiResponse<>(true, "", orderService.getOrderById(orderId))
         );
     }
+
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'STAFF')")
     @GetMapping("")
@@ -92,7 +94,7 @@ public class OrderController {
         AccountPrincipal accountPrincipal = (AccountPrincipal) authentication.getPrincipal();
         Long ownerId = accountPrincipal.getId();
 
-        orderService.updateOrderStatus(orderId, orderUpdateStatusDTO.getStatus(), ownerId);
+        orderService.updateOrderStatus(orderId, OrderStatus.valueOf(orderUpdateStatusDTO.getStatus()), ownerId);
         return ResponseEntity.noContent().build();
     }
 

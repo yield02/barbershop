@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,6 +35,8 @@ public class Order {
     private String customerPhone;
     private String customerEmail;
     private Double totalAmount;
+    
+    @Enumerated(EnumType.STRING)
     private OrderStatus status;
     private String notes;
 

@@ -23,7 +23,6 @@ JpaSpecificationExecutor<Order>
 
 {
 
-    Optional<Order> findById(Long id);
     
     @Modifying
     @Query("UPDATE orders o SET o.status = ?2 WHERE o.id = ?1")

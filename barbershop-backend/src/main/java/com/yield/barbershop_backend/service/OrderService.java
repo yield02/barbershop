@@ -97,8 +97,8 @@ public class OrderService {
         List<Long> productIds = order.getProducts().stream().map((product) -> product.getItemId()).toList();
         
         
-        Map<Long, Product> products = productService.getProductByIds(productIds).stream().collect(Collectors.toMap(Product::getProductId, product -> product));
-        Map<Long, Drink> drinks = drinkService.getDrinkByIds(drinkIds).stream().collect(Collectors.toMap(Drink::getDrinkId, drink -> drink));
+        Map<Long, Product> products = productService.getActiveProductByIds(productIds).stream().collect(Collectors.toMap(Product::getProductId, product -> product));
+        Map<Long, Drink> drinks = drinkService.getActiveDrinkByIds(drinkIds).stream().collect(Collectors.toMap(Drink::getDrinkId, drink -> drink));
 
         
         Map<String, List<Long>> itemsNotFound = new HashMap<>();
@@ -202,18 +202,21 @@ public class OrderService {
         }).sum();
         
         
-        Map<Long, Promotion> promotions = promotionService.getActivePromotionsByIds(promotionIds);
-
+        Map<Long, Promotion> promotions = promotionService.getActivePromotionsByIds(promotionIds)
+            .stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
+        
 
         // <ProductId, PromotionItem>
         Map<Long, PromotionItem> productActivePromotionItems = productsPromotionItems.stream().filter(promotionItem -> {
             Promotion promotion = promotions.get(promotionItem.getPromotionId());
+            if(promotion == null) promotion.getPromotionId();
             return promotion != null;
         }).collect(Collectors.toMap(PromotionItem::getProductId, promotionItem -> promotionItem));
 
         // <DrinkId, PromotionItem>
         Map<Long, PromotionItem> drinkActivePromotionItems = drinksPromotionItems.stream().filter(promotionItem -> {
             Promotion promotion = promotions.get(promotionItem.getPromotionId());
+            if(promotion == null) promotion.getPromotionId();
             return promotion != null;
         }).collect(Collectors.toMap(PromotionItem::getDrinkId, promotionItem -> promotionItem));
 
@@ -223,9 +226,9 @@ public class OrderService {
                 Promotion promotion = promotions.get(promotionItem.getPromotionId());
                 Double discountAmount = promotion.getDiscountAmount();
                 if(discountAmount == null && promotion.getDiscountPercentage() != null) {
-                    discountAmount = drink.getPrice() * (promotion.getDiscountPercentage() / 100);
+                    discountAmount = drink.getPrice() * (promotion.getDiscountPercentage() / 100) * orderDrinkItems.get(drink.getDrinkId()).getQuantity();
                 }
-                return discountAmount;
+                return discountAmount * orderDrinkItems.get(drink.getDrinkId()).getQuantity();
             }
             return 0.0;
         }).sum();
@@ -238,7 +241,7 @@ public class OrderService {
                 if(discountAmount == null && promotion.getDiscountPercentage() != null) {
                     discountAmount = product.getPrice() * (promotion.getDiscountPercentage() / 100);
                 }
-                return discountAmount;
+                return discountAmount * orderProductItems.get(product.getProductId()).getQuantity();
             }
             return 0.0;
         }).sum();
@@ -276,7 +279,7 @@ public class OrderService {
             Double finalPrice = originalPrice;
             if(promotionItem != null) {
                 Promotion promotion = promotions.get(promotionItem.getPromotionId());
-                discountAmount = promotion.getDiscountAmount();
+                discountAmount = promotion.getDiscountAmount() * quantity;
                 if(discountAmount == null && promotion.getDiscountPercentage() != null) {
                     discountAmount = drink.getPrice() * (promotion.getDiscountPercentage() / 100) * quantity ;
                 }
@@ -295,16 +298,16 @@ public class OrderService {
         }).toList());
 
         orderItems.addAll(products.values().stream().map(product -> {
-
+            Long quantity = orderProductItems.get(product.getProductId()).getQuantity();
             Double originalPrice = product.getPrice();
             PromotionItem promotionItem = productActivePromotionItems.get(product.getProductId());
             Double discountAmount = 0.0;
             Double finalPrice = originalPrice;
             if(promotionItem != null) {
                 Promotion promotion = promotions.get(promotionItem.getPromotionId());
-                discountAmount = promotion.getDiscountAmount();
+                discountAmount = promotion.getDiscountAmount() * quantity;
                 if(discountAmount == null && promotion.getDiscountPercentage() != null) {
-                    discountAmount = product.getPrice() * (promotion.getDiscountPercentage() / 100);
+                    discountAmount = product.getPrice() * (promotion.getDiscountPercentage() / 100) * quantity;
                 }
                 finalPrice = originalPrice - discountAmount;
             }
@@ -364,8 +367,8 @@ public class OrderService {
         List<Long> drinkIds = dbDrinkItems.keySet().stream().toList();
         List<Long> productIds = dbDroductItems.keySet().stream().toList();
 
-        List<Drink> dbDrinks = drinkService.getDrinkByIds(drinkIds);
-        List<Product> dbProducts = productService.getProductByIds(productIds);
+        List<Drink> dbDrinks = drinkService.getActiveDrinkByIds(drinkIds);
+        List<Product> dbProducts = productService.getActiveProductByIds(productIds);
         
         // Plus Drink Stock
         if(dbDrinks.size() > 0) {
@@ -406,8 +409,8 @@ public class OrderService {
         Map<Long, Long> newProductIdsAndQuantity = order.getProducts().stream().collect(Collectors.toMap(OrderProductItemCreateDTO::getItemId, OrderProductItemCreateDTO::getQuantity));
         
             // Get all stock drinks and products to check existed and stock
-        List<Drink> newDrinks = drinkService.getDrinkByIds(newDrinkIdsAndQuantity.keySet().stream().toList());
-        List<Product> newProducts = productService.getProductByIds(newProductIdsAndQuantity.keySet().stream().toList());
+        List<Drink> newDrinks = drinkService.getActiveDrinkByIds(newDrinkIdsAndQuantity.keySet().stream().toList());
+        List<Product> newProducts = productService.getActiveProductByIds(newProductIdsAndQuantity.keySet().stream().toList());
         
         
         // 2.[Check new products and drinks id is existed] Start
@@ -460,8 +463,8 @@ public class OrderService {
         if(isDifferenceItems) {
             // 3.[get orderItems to return the quantity of Product or Drink] Start
             // [get drink and product from id] Start
-            List<Drink> oldDrinks = drinkService.getDrinkByIds(oldDrinkIdsAndQuantity.keySet().stream().toList());
-            List<Product> oldProducts = productService.getProductByIds(oldProductIdsAndQuantity.keySet().stream().toList());
+            List<Drink> oldDrinks = drinkService.getActiveDrinkByIds(oldDrinkIdsAndQuantity.keySet().stream().toList());
+            List<Product> oldProducts = productService.getActiveProductByIds(oldProductIdsAndQuantity.keySet().stream().toList());
             // [get drink and product from id] End
 
             // [Plus Drink Stock, Product Stock and save to database]  Start
@@ -547,7 +550,9 @@ public class OrderService {
                                
                 List<Long> promotionIds = promotionItems.stream().map(PromotionItem::getPromotionId).collect(Collectors.toList());
                 
-                Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(promotionIds);
+                Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(promotionIds)
+                    .stream()
+                    .collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
 
                 // <drinkId, PromotionItem>
                 Map<Long, PromotionItem> activeDrinkItems = promotionItems.stream()
@@ -671,8 +676,8 @@ public class OrderService {
         List<Long> drinkIds = orderItems.stream().filter(item -> item.getDrinkId() != null).map(OrderItem::getDrinkId).collect(Collectors.toList());
         List<Long> productIds = orderItems.stream().filter(item -> item.getProductId() != null).map(OrderItem::getProductId).collect(Collectors.toList());
 
-        List<Drink> drinks = drinkService.getDrinkByIds(drinkIds);
-        List<Product> products = productService.getProductByIds(productIds);
+        List<Drink> drinks = drinkService.getActiveDrinkByIds(drinkIds);
+        List<Product> products = productService.getActiveProductByIds(productIds);
 
         drinks.forEach(drink -> {
             Long quantity = orderItems.stream()

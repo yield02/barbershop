@@ -9,6 +9,6 @@ import lombok.Data;
 public class OrderUpdateStatusDTO {
     
     @Pattern(regexp = "^(Pending|Processing|Completed|Cancelled)$", message = "Status must be one of the following values: Pending, Processing, Completed, Cancelled")
-    private OrderStatus status;
+    private String status;
 
 }
