@@ -40,14 +40,17 @@ public class PromotionItem {
 
     @ManyToOne
     @JoinColumn(name = "service_id", insertable = false, updatable = false)
+    @JsonBackReference
     private Service service;
 
     @ManyToOne
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
+    @JsonBackReference
     private Product product;
 
     @ManyToOne
     @JoinColumn(name = "drink_id", insertable = false, updatable = false)
+    @JsonBackReference
     private Drink drink;
 }
 
