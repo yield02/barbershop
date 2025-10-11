@@ -63,13 +63,13 @@ public class DrinkService {
         }
     }
 
-    public List<Drink> getDrinkByIds(List<Long> drinkIds) {
+    public List<Drink> getActiveDrinkByIds(List<Long> drinkIds) {
 
         if (drinkIds == null || drinkIds.isEmpty()) {
             return List.of();
         }
 
-        return drinkRepo.getDrinkByIds(drinkIds);
+        return drinkRepo.getActiveDrinkByIds(drinkIds);
     }
 
     public void saveDrinks(List<Drink> drinks) {

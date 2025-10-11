@@ -27,6 +27,6 @@ public interface ProductRepo extends
    int updateProductStockById(@Param("id") Long id, @Param("stockQuantity") Integer stockQuantity);
 
    @EntityGraph(attributePaths = {"promotionItems"})
-   @Query("SELECT p FROM products p WHERE p.productId IN :productIds")
-   List<Product> getProductByIds(List<Long> productIds);
+   @Query("SELECT p FROM products p WHERE p.productId IN :productIds AND p.isActive = true")
+   List<Product> getActiveProductByIds(List<Long> productIds);
 }

@@ -30,8 +30,8 @@ JpaSpecificationExecutor<Drink>
 
 
     @EntityGraph(attributePaths = {"promotionItems"})
-    @Query("SELECT d FROM drinks d WHERE d.drinkId IN :drinkIds")
-    List<Drink> getDrinkByIds(List<Long> drinkIds);
+    @Query("SELECT d FROM drinks d WHERE d.drinkId IN :drinkIds AND d.isActive = true")
+    List<Drink> getActiveDrinkByIds(List<Long> drinkIds);
 }
 
 

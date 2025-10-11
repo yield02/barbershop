@@ -68,11 +68,11 @@ public class ProductService {
         }
     }
 
-    public List<Product> getProductByIds(List<Long> productIds) {
+    public List<Product> getActiveProductByIds(List<Long> productIds) {
         if (productIds == null || productIds.isEmpty()) {
             return List.of();
         }
-        return productRepo.getProductByIds(productIds);
+        return productRepo.getActiveProductByIds(productIds);
     }
 
 
