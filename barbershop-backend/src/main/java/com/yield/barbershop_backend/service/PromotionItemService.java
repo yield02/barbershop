@@ -18,5 +18,9 @@ public class PromotionItemService {
         promotionItemRepo.saveAll(promotionItems);
     }
 
+    public void deletePromotionItemsByPromotionId(Long promotionId) {
+        promotionItemRepo.deletePromotionItemsByPromotionId(promotionId);
+    }
+
 
 }
