@@ -8,5 +8,6 @@ public interface PromotionItemRepo extends JpaRepository<PromotionItem, Long>
 
 {
 
+    void deletePromotionItemsByPromotionId(Long promotionId);
     
 } 
