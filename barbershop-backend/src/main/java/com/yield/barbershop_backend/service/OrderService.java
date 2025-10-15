@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,8 +94,8 @@ public class OrderService {
 
         Customer customer = customerService.getCustomerById(order.getCustomerId());
         
-        List<Long> drinkIds = order.getDrinks().stream().map((drink) -> drink.getItemId()).toList();
-        List<Long> productIds = order.getProducts().stream().map((product) -> product.getItemId()).toList();
+        Set<Long> drinkIds = order.getDrinks().stream().map((drink) -> drink.getItemId()).collect(Collectors.toSet());
+        Set<Long> productIds = order.getProducts().stream().map((product) -> product.getItemId()).collect(Collectors.toSet());
         
         
         Map<Long, Product> products = productService.getActiveProductByIds(productIds).stream().collect(Collectors.toMap(Product::getProductId, product -> product));
@@ -364,8 +365,8 @@ public class OrderService {
         Map<Long, OrderItem> dbDroductItems = dbOrderItems.stream().filter(item -> item.getProductId() != null).collect(Collectors.toMap(OrderItem::getProductId, item -> item));
 
 
-        List<Long> drinkIds = dbDrinkItems.keySet().stream().toList();
-        List<Long> productIds = dbDroductItems.keySet().stream().toList();
+        Set<Long> drinkIds = dbDrinkItems.keySet().stream().collect(Collectors.toSet());
+        Set<Long> productIds = dbDroductItems.keySet().stream().collect(Collectors.toSet());
 
         List<Drink> dbDrinks = drinkService.getActiveDrinkByIds(drinkIds);
         List<Product> dbProducts = productService.getActiveProductByIds(productIds);
@@ -409,8 +410,8 @@ public class OrderService {
         Map<Long, Long> newProductIdsAndQuantity = order.getProducts().stream().collect(Collectors.toMap(OrderProductItemCreateDTO::getItemId, OrderProductItemCreateDTO::getQuantity));
         
             // Get all stock drinks and products to check existed and stock
-        List<Drink> newDrinks = drinkService.getActiveDrinkByIds(newDrinkIdsAndQuantity.keySet().stream().toList());
-        List<Product> newProducts = productService.getActiveProductByIds(newProductIdsAndQuantity.keySet().stream().toList());
+        List<Drink> newDrinks = drinkService.getActiveDrinkByIds(newDrinkIdsAndQuantity.keySet().stream().collect(Collectors.toSet()));
+        List<Product> newProducts = productService.getActiveProductByIds(newProductIdsAndQuantity.keySet().stream().collect(Collectors.toSet()));
         
         
         // 2.[Check new products and drinks id is existed] Start
@@ -463,8 +464,8 @@ public class OrderService {
         if(isDifferenceItems) {
             // 3.[get orderItems to return the quantity of Product or Drink] Start
             // [get drink and product from id] Start
-            List<Drink> oldDrinks = drinkService.getActiveDrinkByIds(oldDrinkIdsAndQuantity.keySet().stream().toList());
-            List<Product> oldProducts = productService.getActiveProductByIds(oldProductIdsAndQuantity.keySet().stream().toList());
+            List<Drink> oldDrinks = drinkService.getActiveDrinkByIds(oldDrinkIdsAndQuantity.keySet().stream().collect(Collectors.toSet()));
+            List<Product> oldProducts = productService.getActiveProductByIds(oldProductIdsAndQuantity.keySet().stream().collect(Collectors.toSet()));
             // [get drink and product from id] End
 
             // [Plus Drink Stock, Product Stock and save to database]  Start
@@ -673,8 +674,8 @@ public class OrderService {
 
         List<OrderItem> orderItems = order.getOrderItems();
         
-        List<Long> drinkIds = orderItems.stream().filter(item -> item.getDrinkId() != null).map(OrderItem::getDrinkId).collect(Collectors.toList());
-        List<Long> productIds = orderItems.stream().filter(item -> item.getProductId() != null).map(OrderItem::getProductId).collect(Collectors.toList());
+        Set<Long> drinkIds = orderItems.stream().filter(item -> item.getDrinkId() != null).map(OrderItem::getDrinkId).collect(Collectors.toSet());
+        Set<Long> productIds = orderItems.stream().filter(item -> item.getProductId() != null).map(OrderItem::getProductId).collect(Collectors.toSet());
 
         List<Drink> drinks = drinkService.getActiveDrinkByIds(drinkIds);
         List<Product> products = productService.getActiveProductByIds(productIds);
