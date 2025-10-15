@@ -1,6 +1,7 @@
 package com.yield.barbershop_backend.repository;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -24,5 +25,5 @@ JpaRepository<Service, Long>,
 
 
    @Query("SELECT s FROM services s WHERE s.serviceId IN :serviceIds AND s.isActive = true")
-   List<Service> getActiveServicesByIds(List<Long> serviceIds);
+   List<Service> getActiveServicesByIds(Set<Long> serviceIds);
 }

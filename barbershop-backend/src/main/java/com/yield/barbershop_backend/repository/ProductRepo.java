@@ -2,6 +2,7 @@ package com.yield.barbershop_backend.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,5 +29,5 @@ public interface ProductRepo extends
 
    @EntityGraph(attributePaths = {"promotionItems"})
    @Query("SELECT p FROM products p WHERE p.productId IN :productIds AND p.isActive = true")
-   List<Product> getActiveProductByIds(List<Long> productIds);
+   List<Product> getActiveProductByIds(Set<Long> productIds);
 }

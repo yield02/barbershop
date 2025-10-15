@@ -1,6 +1,7 @@
 package com.yield.barbershop_backend.service;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
@@ -63,7 +64,7 @@ public class DrinkService {
         }
     }
 
-    public List<Drink> getActiveDrinkByIds(List<Long> drinkIds) {
+    public List<Drink> getActiveDrinkByIds(Set<Long> drinkIds) {
 
         if (drinkIds == null || drinkIds.isEmpty()) {
             return List.of();

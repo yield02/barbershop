@@ -2,6 +2,7 @@ package com.yield.barbershop_backend.service;
 
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -68,7 +69,7 @@ public class ProductService {
         }
     }
 
-    public List<Product> getActiveProductByIds(List<Long> productIds) {
+    public List<Product> getActiveProductByIds(Set<Long> productIds) {
         if (productIds == null || productIds.isEmpty()) {
             return List.of();
         }

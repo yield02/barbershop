@@ -57,7 +57,7 @@ public class ServiceService {
         return existedIds;
     }
 
-    public List<Service> getActiveServicesByIds(List<Long> serviceIds) {
+    public List<Service> getActiveServicesByIds(Set<Long> serviceIds) {
         return serviceRepo.getActiveServicesByIds(serviceIds);
     }
 

@@ -1,6 +1,7 @@
 package com.yield.barbershop_backend.repository;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,7 +32,7 @@ JpaSpecificationExecutor<Drink>
 
     @EntityGraph(attributePaths = {"promotionItems"})
     @Query("SELECT d FROM drinks d WHERE d.drinkId IN :drinkIds AND d.isActive = true")
-    List<Drink> getActiveDrinkByIds(List<Long> drinkIds);
+    List<Drink> getActiveDrinkByIds(Set<Long> drinkIds);
 }
 
 
