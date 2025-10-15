@@ -3,6 +3,7 @@ package com.yield.barbershop_backend.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,6 +76,7 @@ public class  AppointmentService {
         
         // Check services
         List<com.yield.barbershop_backend.model.Service> services = serviceService.findExistedServiceIds(appointment.getServiceIds());
+        
         if (!services.isEmpty() && (services.size() != appointment.getServiceIds().size())) {
 
             List<Long> nonExistedIds = appointment.getServiceIds().stream()
@@ -92,24 +94,45 @@ public class  AppointmentService {
         );
 
         // <ServiceId, PromotionItem>
-        Map<Long, PromotionItem> promotionItems = services.stream().flatMap(service -> service.getPromotionItems().stream()).collect(Collectors.toMap(PromotionItem::getServiceId, promotionItem -> promotionItem));
 
-        List<Long> promotionIds = promotionItems.values().stream().map(PromotionItem::getPromotionId).collect(Collectors.toList());
+        Set<PromotionItem> listPromotionItems = services.stream().flatMap(service -> {
+            return service.getPromotionItems().stream();
+        }).collect(Collectors.toSet());
 
-        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(promotionIds).stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
+        // serviceId, PromotionItemList
+
+        Map<Long, List<PromotionItem>> promotionItemsByServiceId = listPromotionItems.stream().collect(Collectors.groupingBy(PromotionItem::getServiceId));
+
+        Set<Long> dbPromotionIds = listPromotionItems.stream().map(PromotionItem::getPromotionId).collect(Collectors.toSet());
+
+        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(dbPromotionIds.stream().toList()).stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
 
         Double totalDiscountAmount = services.stream().mapToDouble(service -> {
-            PromotionItem promotionItem = promotionItems.get(service.getServiceId());
+            List<PromotionItem> promotionItems = promotionItemsByServiceId.get(service.getServiceId());
+            
+            if(promotionItems == null || promotionItems.size() == 0) return 0.0;
 
-            if(promotionItem == null) return 0.0;
+         PromotionItem bestPromotionItem = promotionItems.size() == 1 ? promotionItems.get(0) : promotionItems.stream().max((PromotionItem p1, PromotionItem p2) -> {
+                Promotion promotion1 = activePromotions.get(p1.getPromotionId());
+                Promotion promotion2 = activePromotions.get(p2.getPromotionId());
+                if (promotion1.getDiscountAmount() != null && 
+                    promotion2.getDiscountAmount() != null && 
+                    promotion1.getDiscountAmount() >= promotion2.getDiscountAmount()) return 1;
+                else if(promotion1.getDiscountPercentage() != null && 
+                        promotion2.getDiscountPercentage() != null && 
+                        promotion1.getDiscountPercentage() >= promotion2.getDiscountPercentage()) return 1;
+                return -1;
+            }).orElse(null);
 
-            Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
-            if(promotion != null) {
-                if(promotion.getDiscountAmount() != null) {
+            if (bestPromotionItem == null) return 0.0;
+
+            Promotion promotion = activePromotions.get(bestPromotionItem.getPromotionId());
+            if (promotion != null) {
+                if (promotion.getDiscountAmount() != null) {
                     return promotion.getDiscountAmount();
                 }
 
-                if(promotion.getDiscountPercentage() != null) {
+                if (promotion.getDiscountPercentage() != null) {
                     return service.getPrice() * promotion.getDiscountPercentage() / 100;
                 }
             }
@@ -161,7 +184,7 @@ public class  AppointmentService {
             Double discountAmount = 0.0;
             Double finalPrice = originalPrice;
 
-            PromotionItem promotionItem = promotionItems.get(service.getServiceId());
+            PromotionItem promotionItem = listPromotionItems.stream().filter(item -> item.getServiceId() == service.getServiceId()).findFirst().orElse(null);
 
             if(promotionItem != null) {
                 Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
@@ -231,31 +254,48 @@ public class  AppointmentService {
 
         //Caculate totalAmount
         // <ServiceId, PromotionItem>
-        Map<Long, PromotionItem> promotionItems = services.stream().flatMap(service -> service.getPromotionItems().stream()).collect(Collectors.toMap(PromotionItem::getServiceId, promotionItem -> promotionItem));
+        Set<PromotionItem> listPromotionItems = services.stream().flatMap(service -> {
+            return service.getPromotionItems().stream();
+        }).collect(Collectors.toSet());
 
-        List<Long> promotionIds = promotionItems.values().stream().map(PromotionItem::getPromotionId).collect(Collectors.toList());
+        // serviceId, PromotionItemList
 
-        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(promotionIds)
-        .stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
+        Map<Long, List<PromotionItem>> promotionItemsByServiceId = listPromotionItems.stream().collect(Collectors.groupingBy(PromotionItem::getServiceId));
+
+        Set<Long> dbPromotionIds = listPromotionItems.stream().map(PromotionItem::getPromotionId).collect(Collectors.toSet());
+
+        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(dbPromotionIds.stream().toList()).stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
 
         Double totalDiscountAmount = services.stream().mapToDouble(service -> {
-            PromotionItem promotionItem = promotionItems.get(service.getServiceId());
+            List<PromotionItem> promotionItems = promotionItemsByServiceId.get(service.getServiceId());
+            
+            if(promotionItems == null || promotionItems.size() == 0) return 0.0;
 
-            if(promotionItem == null) {
-                return 0.0;
-            }
+            PromotionItem bestPromotionItem = promotionItems.size() == 1 ? promotionItems.get(0) : promotionItems.stream().max((PromotionItem p1, PromotionItem p2) -> {
+                Promotion promotion1 = activePromotions.get(p1.getPromotionId());
+                Promotion promotion2 = activePromotions.get(p2.getPromotionId());
+                if (promotion1.getDiscountAmount() != null && 
+                    promotion2.getDiscountAmount() != null && 
+                    promotion1.getDiscountAmount() >= promotion2.getDiscountAmount()) return 1;
+                else if(promotion1.getDiscountPercentage() != null && 
+                        promotion2.getDiscountPercentage() != null && 
+                        promotion1.getDiscountPercentage() >= promotion2.getDiscountPercentage()) return 1;
+                return -1;
+            }).orElse(null);
 
-            Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
-            if(promotion != null) {
-                if(promotion.getDiscountAmount() != null) {
+            if (bestPromotionItem == null) return 0.0;
+
+            Promotion promotion = activePromotions.get(bestPromotionItem.getPromotionId());
+            if (promotion != null) {
+                if (promotion.getDiscountAmount() != null) {
                     return promotion.getDiscountAmount();
                 }
 
-                if(promotion.getDiscountPercentage() != null) {
+                if (promotion.getDiscountPercentage() != null) {
                     return service.getPrice() * promotion.getDiscountPercentage() / 100;
                 }
-                
             }
+
             return 0.0;
         }).sum();
 
@@ -294,11 +334,12 @@ public class  AppointmentService {
 
         // add new appointmentservices
         List<com.yield.barbershop_backend.model.AppointmentService> appointmentServices = services.stream().map(service -> {
+            
             Double originalPrice = service.getPrice();
             Double discountAmount = 0.0;
             Double finalPrice = originalPrice;
 
-            PromotionItem promotionItem = promotionItems.get(service.getServiceId());
+            PromotionItem promotionItem = listPromotionItems.stream().filter(item -> item.getServiceId() == service.getServiceId()).findFirst().orElse(null);
 
             if(promotionItem != null) {
                 Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
@@ -314,7 +355,6 @@ public class  AppointmentService {
                     finalPrice = originalPrice - discountAmount;
                 }
             }
-
             
             com.yield.barbershop_backend.model.AppointmentService appointmentService = new com.yield.barbershop_backend.model.AppointmentService();
             appointmentService.setAppointmentId(savedAppointment.getAppointmentId());
@@ -335,6 +375,7 @@ public class  AppointmentService {
     public List<Appointment> checkAppointmentsConflict(LocalDateTime startTime, LocalDateTime endTime, Long userId) {
         return appointmentRepo.findAll(AppointmentSpecification.checkAppointmentsConflict(startTime, endTime, userId));
     }
+
 
     public void checkAppointmentConflict(LocalDateTime startTime, LocalDateTime endTime, Long userId) {
         List<Appointment> conflictingAppointments = checkAppointmentsConflict(startTime, endTime, userId);

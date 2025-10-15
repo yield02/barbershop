@@ -44,7 +44,8 @@ public class AppointmentSpecification {
             Predicate timeConflict = criteriaBuilder.and(
                 criteriaBuilder.greaterThan(root.get("endTime"), startTime),
                 criteriaBuilder.lessThan(root.get("startTime"), endTime),
-                criteriaBuilder.equal(root.get("userId"), userId)
+                criteriaBuilder.equal(root.get("userId"), userId),
+                criteriaBuilder.notEqual(root.get("status"), "Cancelled")
             );
             return criteriaBuilder.and(timeConflict);
         };
