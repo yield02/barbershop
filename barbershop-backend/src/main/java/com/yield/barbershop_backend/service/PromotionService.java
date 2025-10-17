@@ -57,15 +57,15 @@ public class PromotionService {
         Set<Long> drinkIds = new HashSet<>();
 
         promotion.getPromotionItems().forEach(item -> {
-            if(item.getItemType() == PromotionItemType.SERVICE.toString()) {
+            if(item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
                 serviceIds.add(item.getItemId());
             }
 
-            if(item.getItemType() == PromotionItemType.PRODUCT.toString()) {
+            if(item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
                 productIds.add(item.getItemId());
             }
 
-            if(item.getItemType() == PromotionItemType.DRINK.toString()) {
+            if(item.getItemType().equals(PromotionItemType.DRINK.toString())) {
                 drinkIds.add(item.getItemId());
             }
         });
@@ -124,15 +124,15 @@ public class PromotionService {
 
         promotion.getPromotionItems().forEach(item -> {
             PromotionItem promotionItem = new PromotionItem();
-            if(item.getItemType() == PromotionItemType.SERVICE.toString()) {
+            if(item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
                 promotionItem.setServiceId(item.getItemId());
             }
 
-            if(item.getItemType() == PromotionItemType.PRODUCT.toString()) {
+            if(item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
                 promotionItem.setProductId(item.getItemId());
             }
 
-            if(item.getItemType() == PromotionItemType.DRINK.toString()) {
+            if(item.getItemType().equals(PromotionItemType.DRINK.toString())) {
                 promotionItem.setDrinkId(item.getItemId());
             }
 
@@ -183,6 +183,7 @@ public class PromotionService {
             dbPromotion.setDiscountPercentage(promotion.getDiscountPercentage());
             dbPromotion.setDiscountAmount(null);
         }
+
         Promotion updatedPromotion = promotionRepo.save(dbPromotion);
 
         Set<Long> productIds = new HashSet<>();
@@ -190,15 +191,15 @@ public class PromotionService {
         Set<Long> drinkIds = new HashSet<>();
 
         promotion.getPromotionItems().forEach(item -> {
-            if(item.getItemType() == PromotionItemType.SERVICE.toString()) {
+            if(item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
                 serviceIds.add(item.getItemId());
             }
 
-            if(item.getItemType() == PromotionItemType.PRODUCT.toString()) {
+            if(item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
                 productIds.add(item.getItemId());
             }
 
-            if(item.getItemType() == PromotionItemType.DRINK.toString()) {
+            if(item.getItemType().equals(PromotionItemType.DRINK.toString())) {
                 drinkIds.add(item.getItemId());
             }
         });
@@ -230,6 +231,7 @@ public class PromotionService {
         }
 
         List<PromotionItem> oldPromotionItems = dbPromotion.getPromotionItems();
+
         Set<Long> oldProductPromotionIds = new HashSet<>();
         Set<Long> oldServicePromotionIds = new HashSet<>();
         Set<Long> oldDrinkPromotionIds = new HashSet<>();
@@ -253,19 +255,19 @@ public class PromotionService {
         if(oldPromotionItems.size() == promotion.getPromotionItems().size()) {
 
             for(PromotionItemCreateDTO item : newPromotionItems) {
-                if(item.getItemType() == PromotionItemType.SERVICE.toString()) {
+                if(item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
                     if(!oldServicePromotionIds.contains(item.getItemId())) {
                         isSame = false;
                         break;
                     }
                 }
-                else if(item.getItemType() == PromotionItemType.PRODUCT.toString()) {
+                else if(item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
                     if(!oldProductPromotionIds.contains(item.getItemId())) {
                         isSame = false;
                         break;
                     }
                 }
-                else if(item.getItemType() == PromotionItemType.DRINK.toString()) {
+                else if(item.getItemType().equals(PromotionItemType.DRINK.toString())) {
                     if(!oldDrinkPromotionIds.contains(item.getItemId())) {
                         isSame = false;
                         break;
@@ -309,7 +311,6 @@ public class PromotionService {
                     return promotionItem;
                 }).toList());
             }
-
             promotionItemService.savePromotionItems(promotionItems);
         }
         return updatedPromotion;
