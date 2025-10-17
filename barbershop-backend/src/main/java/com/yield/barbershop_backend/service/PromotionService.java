@@ -316,5 +316,20 @@ public class PromotionService {
         return updatedPromotion;
     }
 
+    @Transactional
+    public void deletePromotion(Long promotionId) {
+
+        Promotion promotion = promotionRepo.findById(promotionId).orElseThrow(() -> new DataNotFoundException("Promotion not found"));
+
+        if(promotion.getIsActive() == true) {
+            promotion.setIsActive(false);
+            promotionRepo.save(promotion);
+            return ;
+        }
+
+        promotionItemService.deletePromotionItemsByPromotionId(promotionId);
+        promotionRepo.deleteById(promotionId);
+    }
+
 }
 
