@@ -29,6 +29,9 @@ public class AppointmentService {
     @Column(name = "service_id")
     private Long serviceId;
 
+    @Column(name = "promotion_id")
+    private Long promotionId;
+
     @ManyToOne
     @JoinColumn(name = "appointment_id", insertable = false, updatable = false)
     @JsonBackReference

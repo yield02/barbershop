@@ -331,5 +331,26 @@ public class PromotionService {
         promotionRepo.deleteById(promotionId);
     }
 
+    @Transactional
+    public void minusMaxApplicableQuantity(Long promotionId, Integer quantity) {
+        Promotion promotion = promotionRepo.findById(promotionId).orElseThrow(() -> new DataNotFoundException("Promotion not found"));
+        promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() - quantity);
+        promotionRepo.save(promotion);
+    }
+
+    @Transactional
+    public void minusMaxApplicableQuantity(List<Long> promotionIds) {
+        promotionRepo.minusOneApplicableQuantityByPromotionIds(promotionIds);
+    }
+
+    @Transactional
+    public void minusMaxApplicableQuantityForPromotions(List<Promotion> promotions) {
+        promotionRepo.saveAll(promotions);
+    }
+
+    public void updatePromotions(List<Promotion> promotions) {
+        promotionRepo.saveAll(promotions);
+    }
+
 }
 
