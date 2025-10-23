@@ -1,6 +1,7 @@
 package com.yield.barbershop_backend.service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,11 +30,12 @@ import com.yield.barbershop_backend.util.ListUtil;
 
 @org.springframework.stereotype.Service
 public class PromotionService {
-    
+
     @Autowired
     private PromotionRepo promotionRepo;
 
-    @Autowired PromotionItemService promotionItemService;
+    @Autowired
+    PromotionItemService promotionItemService;
 
     @Autowired
     private ProductService productService;
@@ -48,28 +50,30 @@ public class PromotionService {
         return promotionRepo.getActivePromotionsByIds(promotionIds, PromotionSpecification.getActivePromotions());
     }
 
+        public List<Promotion> getActivePromotionsByIds(List<Long> promotionIds, Date promotionDate) {
+        return promotionRepo.getActivePromotionsByIds(promotionIds, PromotionSpecification.getActivePromotions(promotionDate));
+    }
+
     @Transactional
     public Promotion createPromotion(PromotionCreateDTO promotion) {
-
 
         Set<Long> productIds = new HashSet<>();
         Set<Long> serviceIds = new HashSet<>();
         Set<Long> drinkIds = new HashSet<>();
 
         promotion.getPromotionItems().forEach(item -> {
-            if(item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
+            if (item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
                 serviceIds.add(item.getItemId());
             }
 
-            if(item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
+            if (item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
                 productIds.add(item.getItemId());
             }
 
-            if(item.getItemType().equals(PromotionItemType.DRINK.toString())) {
+            if (item.getItemType().equals(PromotionItemType.DRINK.toString())) {
                 drinkIds.add(item.getItemId());
             }
         });
-
 
         List<Product> products = productService.getActiveProductByIds(productIds);
         List<Service> services = serviceService.getActiveServicesByIds(serviceIds);
@@ -77,22 +81,25 @@ public class PromotionService {
 
         Map<String, List<Long>> itemIsNotExisted = new HashMap<>();
 
-        if(productIds.size() > products.size()) {
-            List <Long> productIsNotExisted = ListUtil.difference(productIds.stream().toList(), products.stream().map(Product::getProductId).toList());
+        if (productIds.size() > products.size()) {
+            List<Long> productIsNotExisted = ListUtil.difference(productIds.stream().toList(),
+                    products.stream().map(Product::getProductId).toList());
             itemIsNotExisted.put("products", productIsNotExisted);
         }
 
-        if(serviceIds.size() > services.size()) {
-            List <Long> serviceIsNotExisted = ListUtil.difference(serviceIds.stream().toList(), services.stream().map(Service::getServiceId).toList());
+        if (serviceIds.size() > services.size()) {
+            List<Long> serviceIsNotExisted = ListUtil.difference(serviceIds.stream().toList(),
+                    services.stream().map(Service::getServiceId).toList());
             itemIsNotExisted.put("services", serviceIsNotExisted);
         }
 
-        if(drinkIds.size() > drinks.size()) {
-            List <Long> drinkIsNotExisted = ListUtil.difference(drinkIds.stream().toList(), drinks.stream().map(Drink::getDrinkId).toList());
+        if (drinkIds.size() > drinks.size()) {
+            List<Long> drinkIsNotExisted = ListUtil.difference(drinkIds.stream().toList(),
+                    drinks.stream().map(Drink::getDrinkId).toList());
             itemIsNotExisted.put("drinks", drinkIsNotExisted);
         }
 
-        if(!itemIsNotExisted.isEmpty()) {
+        if (!itemIsNotExisted.isEmpty()) {
             throw new DataNotFoundException("Item is not existed", List.of(itemIsNotExisted));
         }
 
@@ -108,12 +115,10 @@ public class PromotionService {
         entity.setCreatedAt(promotion.getCreatedAt());
         entity.setUpdatedAt(promotion.getUpdatedAt());
 
-        
-        if(promotion.getDiscountAmount() != null) {
+        if (promotion.getDiscountAmount() != null) {
             entity.setDiscountAmount(promotion.getDiscountAmount());
             entity.setDiscountPercentage(null);
-        }
-        else {
+        } else {
             entity.setDiscountPercentage(promotion.getDiscountPercentage());
             entity.setDiscountAmount(null);
         }
@@ -124,15 +129,15 @@ public class PromotionService {
 
         promotion.getPromotionItems().forEach(item -> {
             PromotionItem promotionItem = new PromotionItem();
-            if(item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
+            if (item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
                 promotionItem.setServiceId(item.getItemId());
             }
 
-            if(item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
+            if (item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
                 promotionItem.setProductId(item.getItemId());
             }
 
-            if(item.getItemType().equals(PromotionItemType.DRINK.toString())) {
+            if (item.getItemType().equals(PromotionItemType.DRINK.toString())) {
                 promotionItem.setDrinkId(item.getItemId());
             }
 
@@ -140,17 +145,17 @@ public class PromotionService {
 
             promotionItems.add(promotionItem);
         });
-        
-        promotionItemService.savePromotionItems(promotionItems);
 
+        promotionItemService.savePromotionItems(promotionItems);
+ 
         return savedPromotion;
     }
 
     public Promotion getPromotionById(Long promotionId) {
-        
+
         Promotion promotion = promotionRepo.findById(promotionId)
-        .orElseThrow(() -> new DataNotFoundException("Promotion not found"));
-    
+                .orElseThrow(() -> new DataNotFoundException("Promotion not found"));
+
         return promotion;
     }
 
@@ -159,12 +164,11 @@ public class PromotionService {
         return promotionRepo.findAll(PromotionSpecification.getPromotionsByFilter(filter), page);
     }
 
-
     @Transactional
     public Promotion updatePromotion(Long promotionId, PromotionCreateDTO promotion) {
 
         Promotion dbPromotion = promotionRepo.findById(promotionId)
-        .orElseThrow(() -> new DataNotFoundException("Promotion not found"));
+                .orElseThrow(() -> new DataNotFoundException("Promotion not found"));
 
         dbPromotion.setPromotionName(promotion.getPromotionName());
         dbPromotion.setDescription(promotion.getDescription());
@@ -175,11 +179,10 @@ public class PromotionService {
         dbPromotion.setIsActive(promotion.getIsActive());
         dbPromotion.setUpdatedAt(promotion.getUpdatedAt());
 
-        if(promotion.getDiscountAmount() != null) {
+        if (promotion.getDiscountAmount() != null) {
             dbPromotion.setDiscountAmount(promotion.getDiscountAmount());
             dbPromotion.setDiscountPercentage(null);
-        }
-        else if(promotion.getDiscountPercentage() != null) {
+        } else if (promotion.getDiscountPercentage() != null) {
             dbPromotion.setDiscountPercentage(promotion.getDiscountPercentage());
             dbPromotion.setDiscountAmount(null);
         }
@@ -191,19 +194,18 @@ public class PromotionService {
         Set<Long> drinkIds = new HashSet<>();
 
         promotion.getPromotionItems().forEach(item -> {
-            if(item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
+            if (item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
                 serviceIds.add(item.getItemId());
             }
 
-            if(item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
+            if (item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
                 productIds.add(item.getItemId());
             }
 
-            if(item.getItemType().equals(PromotionItemType.DRINK.toString())) {
+            if (item.getItemType().equals(PromotionItemType.DRINK.toString())) {
                 drinkIds.add(item.getItemId());
             }
         });
-
 
         List<Product> products = productService.getActiveProductByIds(productIds);
         List<Service> services = serviceService.getActiveServicesByIds(serviceIds);
@@ -211,22 +213,25 @@ public class PromotionService {
 
         Map<String, List<Long>> itemIsNotExisted = new HashMap<>();
 
-        if(productIds.size() > products.size()) {
-            List <Long> productIsNotExisted = ListUtil.difference(productIds.stream().toList(), products.stream().map(Product::getProductId).toList());
+        if (productIds.size() > products.size()) {
+            List<Long> productIsNotExisted = ListUtil.difference(productIds.stream().toList(),
+                    products.stream().map(Product::getProductId).toList());
             itemIsNotExisted.put("products", productIsNotExisted);
         }
 
-        if(serviceIds.size() > services.size()) {
-            List <Long> serviceIsNotExisted = ListUtil.difference(serviceIds.stream().toList(), services.stream().map(Service::getServiceId).toList());
+        if (serviceIds.size() > services.size()) {
+            List<Long> serviceIsNotExisted = ListUtil.difference(serviceIds.stream().toList(),
+                    services.stream().map(Service::getServiceId).toList());
             itemIsNotExisted.put("services", serviceIsNotExisted);
         }
 
-        if(drinkIds.size() > drinks.size()) {
-            List <Long> drinkIsNotExisted = ListUtil.difference(drinkIds.stream().toList(), drinks.stream().map(Drink::getDrinkId).toList());
+        if (drinkIds.size() > drinks.size()) {
+            List<Long> drinkIsNotExisted = ListUtil.difference(drinkIds.stream().toList(),
+                    drinks.stream().map(Drink::getDrinkId).toList());
             itemIsNotExisted.put("drinks", drinkIsNotExisted);
         }
 
-        if(!itemIsNotExisted.isEmpty()) {
+        if (!itemIsNotExisted.isEmpty()) {
             throw new DataNotFoundException("Item is not existed", List.of(itemIsNotExisted));
         }
 
@@ -237,13 +242,11 @@ public class PromotionService {
         Set<Long> oldDrinkPromotionIds = new HashSet<>();
 
         oldPromotionItems.forEach(item -> {
-            if(item.getProductId() != null) {
+            if (item.getProductId() != null) {
                 oldProductPromotionIds.add(item.getProductId());
-            }
-            else if(item.getServiceId() != null) {
+            } else if (item.getServiceId() != null) {
                 oldServicePromotionIds.add(item.getServiceId());
-            }
-            else if(item.getDrinkId() != null) {
+            } else if (item.getDrinkId() != null) {
                 oldDrinkPromotionIds.add(item.getDrinkId());
             }
         });
@@ -252,40 +255,37 @@ public class PromotionService {
 
         Boolean isSame = true;
 
-        if(oldPromotionItems.size() == promotion.getPromotionItems().size()) {
+        if (oldPromotionItems.size() == promotion.getPromotionItems().size()) {
 
-            for(PromotionItemCreateDTO item : newPromotionItems) {
-                if(item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
-                    if(!oldServicePromotionIds.contains(item.getItemId())) {
+            for (PromotionItemCreateDTO item : newPromotionItems) {
+                if (item.getItemType().equals(PromotionItemType.SERVICE.toString())) {
+                    if (!oldServicePromotionIds.contains(item.getItemId())) {
                         isSame = false;
                         break;
                     }
-                }
-                else if(item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
-                    if(!oldProductPromotionIds.contains(item.getItemId())) {
+                } else if (item.getItemType().equals(PromotionItemType.PRODUCT.toString())) {
+                    if (!oldProductPromotionIds.contains(item.getItemId())) {
                         isSame = false;
                         break;
                     }
-                }
-                else if(item.getItemType().equals(PromotionItemType.DRINK.toString())) {
-                    if(!oldDrinkPromotionIds.contains(item.getItemId())) {
+                } else if (item.getItemType().equals(PromotionItemType.DRINK.toString())) {
+                    if (!oldDrinkPromotionIds.contains(item.getItemId())) {
                         isSame = false;
                         break;
                     }
                 }
             }
-        }
-        else {
+        } else {
             isSame = false;
         }
 
-        if(!isSame) {
+        if (!isSame) {
 
             promotionItemService.deletePromotionItemsByPromotionId(promotionId);
 
             List<PromotionItem> promotionItems = new ArrayList<>();
 
-            if(productIds.size() > 0) {
+            if (productIds.size() > 0) {
                 promotionItems.addAll(productIds.stream().map(productId -> {
                     PromotionItem promotionItem = new PromotionItem();
                     promotionItem.setProductId(productId);
@@ -294,7 +294,7 @@ public class PromotionService {
                 }).toList());
             }
 
-            if(serviceIds.size() > 0) {
+            if (serviceIds.size() > 0) {
                 promotionItems.addAll(serviceIds.stream().map(serviceId -> {
                     PromotionItem promotionItem = new PromotionItem();
                     promotionItem.setServiceId(serviceId);
@@ -303,7 +303,7 @@ public class PromotionService {
                 }).toList());
             }
 
-            if(drinkIds.size() > 0) {
+            if (drinkIds.size() > 0) {
                 promotionItems.addAll(drinkIds.stream().map(drinkId -> {
                     PromotionItem promotionItem = new PromotionItem();
                     promotionItem.setDrinkId(drinkId);
@@ -319,12 +319,13 @@ public class PromotionService {
     @Transactional
     public void deletePromotion(Long promotionId) {
 
-        Promotion promotion = promotionRepo.findById(promotionId).orElseThrow(() -> new DataNotFoundException("Promotion not found"));
+        Promotion promotion = promotionRepo.findById(promotionId)
+                .orElseThrow(() -> new DataNotFoundException("Promotion not found"));
 
-        if(promotion.getIsActive() == true) {
+        if (promotion.getIsActive() == true) {
             promotion.setIsActive(false);
             promotionRepo.save(promotion);
-            return ;
+            return;
         }
 
         promotionItemService.deletePromotionItemsByPromotionId(promotionId);
@@ -333,7 +334,8 @@ public class PromotionService {
 
     @Transactional
     public void minusMaxApplicableQuantity(Long promotionId, Integer quantity) {
-        Promotion promotion = promotionRepo.findById(promotionId).orElseThrow(() -> new DataNotFoundException("Promotion not found"));
+        Promotion promotion = promotionRepo.findById(promotionId)
+                .orElseThrow(() -> new DataNotFoundException("Promotion not found"));
         promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() - quantity);
         promotionRepo.save(promotion);
     }
@@ -351,6 +353,26 @@ public class PromotionService {
     public void updatePromotions(List<Promotion> promotions) {
         promotionRepo.saveAll(promotions);
     }
+    public Promotion pickBetterPromotion(Promotion existing, Promotion candidate) {
+        if (existing == null)
+            return candidate;
+        if (candidate == null)
+            return existing;
 
+        Double existingAmt = existing.getDiscountAmount();
+        Double candidateAmt = candidate.getDiscountAmount();
+
+        if (existingAmt != null || candidateAmt != null) {
+            if (existingAmt == null && candidateAmt != null)
+                return candidate;
+            if (candidateAmt == null && existingAmt != null)
+                return existing;
+            return candidateAmt > existingAmt ? candidate : existing;
+        }
+
+        Double existingPct = existing.getDiscountPercentage() == null ? 0.0 : existing.getDiscountPercentage();
+        Double candidatePct = candidate.getDiscountPercentage() == null ? 0.0 : candidate.getDiscountPercentage();
+
+        return candidatePct > existingPct ? candidate : existing;
+    }
 }
-

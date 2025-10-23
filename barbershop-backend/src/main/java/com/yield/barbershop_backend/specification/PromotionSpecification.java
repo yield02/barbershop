@@ -27,6 +27,18 @@ public class PromotionSpecification {
         };
     }
 
+        public static Specification<Promotion> getActivePromotions(Date date) {
+        return (root, query, cb) -> {
+
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.greaterThanOrEqualTo(root.get("startDate"), date));
+            predicates.add(cb.lessThanOrEqualTo(root.get("endDate"), date));
+            predicates.add(cb.greaterThan(root.get("maxApplicableQuantity"), 0));
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
     public static Specification<Promotion> getPromotionsByFilter(PromotionFilterDTO filter) {
         return (root, query, cb) -> {
 

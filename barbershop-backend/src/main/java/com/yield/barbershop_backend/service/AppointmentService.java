@@ -1,7 +1,11 @@
 package com.yield.barbershop_backend.service;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,10 +32,8 @@ import com.yield.barbershop_backend.model.User;
 import com.yield.barbershop_backend.repository.AppointmentRepo;
 import com.yield.barbershop_backend.specification.AppointmentSpecification;
 
-
 @Service
-public class  AppointmentService {
-    
+public class AppointmentService {
 
     @Autowired
     private AppointmentRepo appointmentRepo;
@@ -47,9 +49,12 @@ public class  AppointmentService {
 
     @Autowired
     private AppointmentServiceService appointmentServiceService;
-    
+
     @Autowired
     private PromotionService promotionService;
+
+    @Autowired
+    private PromotionItemService promotionItemService;
 
     // @Autowired
     // private AppointmentServiceRepo appointmentServiceRepo;
@@ -63,7 +68,7 @@ public class  AppointmentService {
 
     public Appointment getAppointmentById(Long appointmentId) {
         return appointmentRepo.findById(appointmentId)
-            .orElseThrow(() -> new DataNotFoundException("Appointment not found"));
+                .orElseThrow(() -> new DataNotFoundException("Appointment not found"));
     }
 
     public void deleteAppointment(Long appointmentId) {
@@ -71,28 +76,33 @@ public class  AppointmentService {
     }
 
     @Transactional
-    public Appointment createAppointment(CreateAppointmentDTO appointment) throws DataNotFoundException, DataConflictException {
+    public Appointment createAppointment(CreateAppointmentDTO appointment)
+            throws DataNotFoundException, DataConflictException {
         // Check and get user
         User user = userService.getUserById(appointment.getUserId());
-        
+
         // Check services
-        List<com.yield.barbershop_backend.model.Service> dbServices = serviceService.findExistedServiceIds(appointment.getServiceIds());
-        
-        if (!dbServices.isEmpty() && (dbServices.size() != appointment.getServiceIds().size())) {
+        List<com.yield.barbershop_backend.model.Service> dbServices = serviceService
+                .findExistedServiceIds(appointment.getServiceIds());
+
+        Map<Long, com.yield.barbershop_backend.model.Service> dbServicesMap = dbServices.stream()
+                .collect(Collectors.toMap(com.yield.barbershop_backend.model.Service::getServiceId, item -> item));
+
+        if (!dbServices.isEmpty() && (dbServices.size() != appointment.getServiceIds().stream().collect(Collectors.toSet()).size())) {
 
             List<Long> nonExistedIds = appointment.getServiceIds().stream()
-                .filter(id -> !dbServices.stream().map(com.yield.barbershop_backend.model.Service::getServiceId).collect(Collectors.toSet()).contains(id))
-                .toList();
+                    .filter(id -> !dbServices.stream().map(com.yield.barbershop_backend.model.Service::getServiceId)
+                            .collect(Collectors.toSet()).contains(id))
+                    .toList();
 
             throw new DataNotFoundException("Services not found with ids: " + nonExistedIds);
         }
 
         // Caculate endTime
         LocalDateTime endTime = appointment.getStartTime().plusMinutes(
-            dbServices.stream()
-                .map(com.yield.barbershop_backend.model.Service::getDurationMinutes)
-                .reduce(0, Integer::sum)
-        );
+                dbServices.stream()
+                        .map(com.yield.barbershop_backend.model.Service::getDurationMinutes)
+                        .reduce(0, Integer::sum));
 
         // <ServiceId, PromotionItem>
 
@@ -102,98 +112,107 @@ public class  AppointmentService {
 
         // serviceId, PromotionItemList
 
-        Map<Long, List<PromotionItem>> promotionItemsGroupByServiceId = listPromotionItems.stream().collect(Collectors.groupingBy(PromotionItem::getServiceId));
+        Map<Long, List<PromotionItem>> promotionItemsGroupByServiceId = listPromotionItems.stream()
+                .collect(Collectors.groupingBy(PromotionItem::getServiceId));
 
-        Set<Long> dbPromotionIds = listPromotionItems.stream().map(PromotionItem::getPromotionId).collect(Collectors.toSet());
+        Set<Long> dbPromotionIds = listPromotionItems.stream().map(PromotionItem::getPromotionId)
+                .collect(Collectors.toSet());
 
-        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(dbPromotionIds.stream().toList()).stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
-        
-        List<Promotion> promotionsNeedingMaxApplicableQuantityUpdate = new ArrayList<Promotion>();
+        Map<Long, Promotion> activePromotions = promotionService
+                .getActivePromotionsByIds(dbPromotionIds.stream().toList()).stream()
+                .collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
+        // <promotionId, Promotion>
+        Map<Long, Promotion> promotionsNeedingMaxApplicableQuantityUpdateMap = new HashMap<>();
 
         // create new appointmentservices
-        List<com.yield.barbershop_backend.model.AppointmentService> newAppointmentServices = dbServices.stream().map(service -> {
-            
-            List<PromotionItem> promotionItems = promotionItemsGroupByServiceId.get(service.getServiceId());
+        List<com.yield.barbershop_backend.model.AppointmentService> newAppointmentServices = appointment.getServiceIds().stream()
+                .map(serviceId -> {
 
-            PromotionItem bestPromotionItem = null;
+                    com.yield.barbershop_backend.model.Service service = dbServicesMap.get(serviceId);
 
-            if(promotionItems != null) {
-                bestPromotionItem = promotionItems.size() == 1 ? promotionItems.get(0) : promotionItems.stream().max((PromotionItem p1, PromotionItem p2) -> {
-                    Promotion promotion1 = activePromotions.get(p1.getPromotionId());
-                    Promotion promotion2 = activePromotions.get(p2.getPromotionId());
-                    if (promotion1.getDiscountAmount() != null && 
-                        promotion2.getDiscountAmount() != null && 
-                        promotion1.getDiscountAmount() >= promotion2.getDiscountAmount()) return 1;
-                    else if(promotion1.getDiscountPercentage() != null && 
-                            promotion2.getDiscountPercentage() != null && 
-                            promotion1.getDiscountPercentage() >= promotion2.getDiscountPercentage()) return 1;
-                    return -1;
-                }).orElse(null);
-            }
+                    List<PromotionItem> promotionItems = promotionItemsGroupByServiceId.get(service.getServiceId());
 
-            Double originalPrice = service.getPrice();
-            Double discountAmount = 0.0;
-            Double finalPrice = originalPrice;
+                    PromotionItem bestPromotionItem = null;
 
-            com.yield.barbershop_backend.model.AppointmentService newAppointmentService = new com.yield.barbershop_backend.model.AppointmentService();
+                    if (promotionItems != null) {
+                        bestPromotionItem = promotionItems.size() == 1 ? promotionItems.get(0)
+                                : promotionItems.stream().max((PromotionItem p1, PromotionItem p2) -> {
+                                    Promotion promotion1 = activePromotions.get(p1.getPromotionId());
+                                    Promotion promotion2 = activePromotions.get(p2.getPromotionId());
+                                    if (promotion1.getDiscountAmount() != null &&
+                                            promotion2.getDiscountAmount() != null &&
+                                            promotion1.getDiscountAmount() >= promotion2.getDiscountAmount())
+                                        return 1;
+                                    else if (promotion1.getDiscountPercentage() != null &&
+                                            promotion2.getDiscountPercentage() != null &&
+                                            promotion1.getDiscountPercentage() >= promotion2.getDiscountPercentage())
+                                        return 1;
+                                    return -1;
+                                }).orElse(null);
+                    } 
 
-            if(bestPromotionItem != null) {
+                    Double originalPrice = service.getPrice();
+                    Double discountAmount = 0.0;
+                    Double finalPrice = originalPrice;
 
-                Promotion promotion = activePromotions.get(bestPromotionItem.getPromotionId());
+                    com.yield.barbershop_backend.model.AppointmentService newAppointmentService = new com.yield.barbershop_backend.model.AppointmentService();
 
-                if(promotion != null && promotion.getMaxApplicableQuantity() > 0) {
-                    // Minus MaxApplicableQuantity
-                    promotionsNeedingMaxApplicableQuantityUpdate.add(promotion);
+                    if (bestPromotionItem != null) {
 
-                    if(promotion.getDiscountAmount() != null) {
-                        discountAmount = promotion.getDiscountAmount();
+                        Promotion promotion = activePromotions.get(bestPromotionItem.getPromotionId());
+
+                        if (promotion != null && promotion.getMaxApplicableQuantity() > 0) {
+                            // Minus MaxApplicableQuantity
+                            promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() - 1);
+                            if (!promotionsNeedingMaxApplicableQuantityUpdateMap.containsKey(promotion.getPromotionId())) {
+                                promotionsNeedingMaxApplicableQuantityUpdateMap.put(promotion.getPromotionId(), promotion);
+                            }
+                            else {
+                                promotionsNeedingMaxApplicableQuantityUpdateMap.replace(promotion.getPromotionId(), promotion);
+                            } 
+
+                            if (promotion.getDiscountAmount() != null) {
+                                discountAmount = promotion.getDiscountAmount();
+                            }
+
+                            if (promotion.getDiscountPercentage() != null) {
+                                discountAmount = service.getPrice() * promotion.getDiscountPercentage() / 100;
+                            }
+
+                            finalPrice = originalPrice - discountAmount;
+                            newAppointmentService.setPromotionId(promotion.getPromotionId());
+                        }
                     }
 
-                    if(promotion.getDiscountPercentage() != null) {
-                        discountAmount = service.getPrice() * promotion.getDiscountPercentage() / 100;
-                    }
+                    newAppointmentService.setServiceId(service.getServiceId());
+                    newAppointmentService.setServiceName(service.getServiceName());
+                    newAppointmentService.setOriginalPrice(originalPrice);
+                    newAppointmentService.setDiscountAmount(discountAmount);
+                    newAppointmentService.setFinalPrice(finalPrice);
+                    return newAppointmentService;
+                }).collect(Collectors.toList());
 
-                    finalPrice = originalPrice - discountAmount;
-                    newAppointmentService.setPromotionId(promotion.getPromotionId());
-                }
-            }
-            newAppointmentService.setServiceId(service.getServiceId());
-            newAppointmentService.setServiceName(service.getServiceName());
-            newAppointmentService.setOriginalPrice(originalPrice);
-            newAppointmentService.setDiscountAmount(discountAmount);
-            newAppointmentService.setFinalPrice(finalPrice);
-            return newAppointmentService;
-        }).collect(Collectors.toList());
+        // Minus MaxApplicableQuantity
+        if (promotionsNeedingMaxApplicableQuantityUpdateMap.size() > 0)
+            promotionService.updatePromotions(promotionsNeedingMaxApplicableQuantityUpdateMap.values().stream().toList());
 
-        if(promotionsNeedingMaxApplicableQuantityUpdate.size() > 0)
-            promotionService.minusMaxApplicableQuantity(promotionsNeedingMaxApplicableQuantityUpdate.stream().map(Promotion::getPromotionId).collect(Collectors.toList()));
-        
+        // Caculate totalAmounts
+        Double totalFinalPrice = newAppointmentServices.stream()
+                .mapToDouble(com.yield.barbershop_backend.model.AppointmentService::getFinalPrice).sum();
 
-        //Caculate totalAmount
-
-
-        Double totalFinalPrice = newAppointmentServices.stream().mapToDouble(com.yield.barbershop_backend.model.AppointmentService::getFinalPrice).sum();
-
-
-
-        // Get CustomerId By Id, Se bo sung chuc nang nay khi da them jwt
-        Long customerId = 1L;
-
-        Customer customer = customerService.getCustomerById(customerId);
+        Customer customer = customerService.getCustomerById(appointment.getCustomerId());
 
         // Check for appointment conflicts
         checkAppointmentConflict(appointment.getStartTime(), endTime, user.getUserId());
 
         // Create Appointment
         Appointment newAppointment = new Appointment();
- 
-        newAppointment.setCustomerName(customer.getFullName()); 
+
+        newAppointment.setCustomerName(customer.getFullName());
         newAppointment.setCustomerPhone(customer.getPhoneNumber());
         newAppointment.setCustomerEmail(customer.getEmail());
         newAppointment.setCustomerId(customer.getCustomerId());
-
         newAppointment.setUserId(user.getUserId());
-
         newAppointment.setTotalAmount(totalFinalPrice);
         newAppointment.setStartTime(appointment.getStartTime());
         newAppointment.setEndTime(endTime);
@@ -205,207 +224,220 @@ public class  AppointmentService {
         Appointment savedAppointment = appointmentRepo.save(newAppointment);
 
         // Set AppointmentId for AppointmentServices
-
-        for(com.yield.barbershop_backend.model.AppointmentService appointmentService : newAppointmentServices) {
+        for (com.yield.barbershop_backend.model.AppointmentService appointmentService : newAppointmentServices) {
             appointmentService.setAppointmentId(savedAppointment.getAppointmentId());
         }
 
         // Save AppointmentServices
         appointmentServiceService.createAppointmentServices(newAppointmentServices);
-        
+
         return savedAppointment;
     }
-
 
     @Transactional
-    public Appointment updateAppointment(Long appointmentId, UpdateAppointmentDTO appointment) {
+    public Appointment updateAppointment(Long appointmentId, UpdateAppointmentDTO appointment)
+            throws AccessDeniedException {
 
-        //Check appointment exsited
+        // Get existing appointment
+        Appointment existingAppointment = getAppointmentById(appointmentId);
 
-        
-        Appointment existingAppointment = appointmentRepo.findById(appointmentId)
-            .orElseThrow(() -> new DataNotFoundException("Appointment not found with id: " + appointmentId));
-
-        // Check status appointment
-
-        if (existingAppointment.getStatus().equals("Cancelled") || existingAppointment.getStatus().equals("Completed")) {
-            throw new DataConflictException("Cannot update appointment with status: " + existingAppointment.getStatus());
+        // Checking status
+        if (existingAppointment.getStatus().equals("Cancelled")
+                || existingAppointment.getStatus().equals("Completed")) {
+            throw new DataConflictException(
+                    "Cannot update appointment with status: " + existingAppointment.getStatus());
         }
 
-        // Check and get user
-        User user = userService.getUserById(appointment.getUserId());
-        
-        // Check if the services exist
-        List<com.yield.barbershop_backend.model.Service> services = serviceService.findExistedServiceIds(appointment.getServiceIds());
-        if (!services.isEmpty() && (services.size() != appointment.getServiceIds().size())) {
-
-            List<Long> nonExistedIds = appointment.getServiceIds().stream()
-                .filter(id -> !services.stream().map(com.yield.barbershop_backend.model.Service::getServiceId).collect(Collectors.toSet()).contains(id))
-                .toList();
-
-            throw new DataNotFoundException("Services not found with ids: " + nonExistedIds);
+        // Check owner and admin
+        if (appointment.getCustomerId() != null
+                && !existingAppointment.getCustomerId().equals(appointment.getCustomerId())) {
+            throw new AccessDeniedException("You don't have permission to update this appointment");
         }
 
-        // Caculate endTime
-        LocalDateTime endTime = appointment.getStartTime().plusMinutes(
-            services.stream()
-                .map(com.yield.barbershop_backend.model.Service::getDurationMinutes)
-                .reduce(0, Integer::sum)
-        );
+        // Get existing appointmentServices
+        List<com.yield.barbershop_backend.model.AppointmentService> existingAppointmentServices = existingAppointment
+                .getAppointmentServices();
+        List<Long> existingServiceIds = existingAppointmentServices.stream()
+                .map(com.yield.barbershop_backend.model.AppointmentService::getServiceId).collect(Collectors.toList());
 
-        //Caculate totalAmount
-        // <ServiceId, PromotionItem>
-        Set<PromotionItem> listPromotionItems = services.stream().flatMap(service -> {
-            return service.getPromotionItems().stream();
-        }).collect(Collectors.toSet());
+        Boolean isDifference = false;
 
-        // serviceId, PromotionItemList
+        if (existingServiceIds.size() != appointment.getServiceIds().size()) {
+            isDifference = true;
+        } else if (!existingServiceIds.equals(appointment.getServiceIds())) {
+            isDifference = true;
+        }
 
-        Map<Long, List<PromotionItem>> promotionItemsByServiceId = listPromotionItems.stream().collect(Collectors.groupingBy(PromotionItem::getServiceId));
+        if (isDifference) {
+            // Check new services are existing
+            Set<Long> newServiceIds = new HashSet<>(appointment.getServiceIds());
 
-        Set<Long> dbPromotionIds = listPromotionItems.stream().map(PromotionItem::getPromotionId).collect(Collectors.toSet());
+            List<com.yield.barbershop_backend.model.Service> dbNewServices = serviceService
+                    .getActiveServicesByIds(newServiceIds);
+            Map<Long, com.yield.barbershop_backend.model.Service> dbServiceMap = dbNewServices.stream()
+                    .collect(Collectors.toMap(com.yield.barbershop_backend.model.Service::getServiceId,
+                            service -> service));
 
-        Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(dbPromotionIds.stream().toList()).stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
-
-        List<Promotion> promotionsNeedingMaxApplicableQuantityUpdate = new ArrayList<Promotion>();
-
-
-        Double totalDiscountAmount = services.stream().mapToDouble(service -> {
-            List<PromotionItem> promotionItems = promotionItemsByServiceId.get(service.getServiceId());
-            
-            if(promotionItems == null || promotionItems.size() == 0) return 0.0;
-
-            PromotionItem bestPromotionItem = promotionItems.size() == 1 ? promotionItems.get(0) : promotionItems.stream().max((PromotionItem p1, PromotionItem p2) -> {
-                Promotion promotion1 = activePromotions.get(p1.getPromotionId());
-                Promotion promotion2 = activePromotions.get(p2.getPromotionId());
-                if (promotion1.getDiscountAmount() != null && 
-                    promotion2.getDiscountAmount() != null && 
-                    promotion1.getDiscountAmount() >= promotion2.getDiscountAmount()) return 1;
-                else if(promotion1.getDiscountPercentage() != null && 
-                        promotion2.getDiscountPercentage() != null && 
-                        promotion1.getDiscountPercentage() >= promotion2.getDiscountPercentage()) return 1;
-                return -1;
-            }).orElse(null);
-
-            if (bestPromotionItem == null) return 0.0;
-
-            Promotion promotion = activePromotions.get(bestPromotionItem.getPromotionId());
-            if (promotion != null && promotion.getMaxApplicableQuantity() > 0) {
-
-                promotionService.minusMaxApplicableQuantity(promotion.getPromotionId(), 1);
-
-                if (promotion.getDiscountAmount() != null) {
-                    return promotion.getDiscountAmount();
-                }
-
-                if (promotion.getDiscountPercentage() != null) {
-                    return service.getPrice() * promotion.getDiscountPercentage() / 100;
-                }
+            if (newServiceIds.size() != dbNewServices.size()) {
+                Set<Long> dbServiceIds = dbNewServices.stream()
+                        .map(com.yield.barbershop_backend.model.Service::getServiceId).collect(Collectors.toSet());
+                throw new DataNotFoundException(
+                        "Service not found: " + newServiceIds.removeIf(id -> dbServiceIds.contains(id)));
             }
 
-            return 0.0;
-        }).sum();
+            // Delete old appointmentServices
+            appointmentServiceService.deleteAppointmentServicesByAppointmentId(appointmentId);
 
-        //Caculate totalAmount
-        Double totalOriginalPrice = services.stream()
-            .map(com.yield.barbershop_backend.model.Service::getPrice)
-            .reduce(0.0, Double::sum);
+            // return max applicable quantity
+            // <PromotionId, Promotion>
+            Map<Long, Promotion> returnMaxApplicableQuantityPromotionsMap = promotionService
+                    .getActivePromotionsByIds(existingAppointmentServices.stream()
+                            .map(com.yield.barbershop_backend.model.AppointmentService::getPromotionId).toList(), existingAppointment.getCreatedAt())
+                    .stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
 
-        Double totalFinalPrice = totalOriginalPrice - totalDiscountAmount;
+            if (returnMaxApplicableQuantityPromotionsMap.size() > 0) {
+                existingAppointmentServices.forEach(appointmentService -> {
 
-
-
-        // Get CustomerId By Id, Se bo sung chuc nang nay khi da them jwt
-        Long customerId = 1L;
-
-        Customer customer = customerService.getCustomerById(customerId);
-
-        // Check for appointment conflicts
-        checkAppointmentConflictExceptCurrent(appointment.getStartTime(), endTime, user.getUserId(), appointmentId);
-
-
-        // update Appointment
-
-        existingAppointment.setUserId(user.getUserId());
-        existingAppointment.setTotalAmount(totalFinalPrice);
-        existingAppointment.setStartTime(appointment.getStartTime());
-        existingAppointment.setEndTime(endTime);
-        existingAppointment.setNotes(appointment.getNotes());
-        existingAppointment.setCreatedAt(appointment.getCreatedAt());
-        existingAppointment.setUpdatedAt(appointment.getUpdatedAt());
-        Appointment savedAppointment = appointmentRepo.save(existingAppointment);
-
-        // delete old services
-
-        appointmentServiceService.deleteAppointmentServicesByAppointmentId(appointmentId);
-
-        // add new appointmentservices
-        List<com.yield.barbershop_backend.model.AppointmentService> appointmentServices = services.stream().map(service -> {
-            
-            Double originalPrice = service.getPrice();
-            Double discountAmount = 0.0;
-            Double finalPrice = originalPrice;
-
-            PromotionItem promotionItem = listPromotionItems.stream().filter(item -> item.getServiceId() == service.getServiceId()).findFirst().orElse(null);
-            com.yield.barbershop_backend.model.AppointmentService appointmentService = new com.yield.barbershop_backend.model.AppointmentService();
-
-            if(promotionItem != null) {
-                Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
-                if(promotion != null && promotion.getMaxApplicableQuantity() > 0) {
-                    if(promotion.getDiscountAmount() != null) {
-                        discountAmount = promotion.getDiscountAmount();
+                    if (appointmentService.getPromotionId() == null) {
+                        return;
                     }
 
-                    if(promotion.getDiscountPercentage() != null) {
-                        discountAmount = service.getPrice() * promotion.getDiscountPercentage() / 100;
+                    Promotion promotion = returnMaxApplicableQuantityPromotionsMap
+                            .get(appointmentService.getPromotionId());
+                    if (promotion != null) {
+                        promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() + 1);
+                        returnMaxApplicableQuantityPromotionsMap.replace(promotion.getPromotionId(), promotion);
                     }
+                });
+            }
+            promotionService.updatePromotions(returnMaxApplicableQuantityPromotionsMap.values().stream().toList());
 
+            // Get promotion and calculate promotions
+            List<PromotionItem> promotionItems = dbNewServices.stream()
+                    .flatMap(service -> service.getPromotionItems().stream()).toList();
+            Set<Long> promotionIds = promotionItems.stream()
+                    .filter(promotionItem -> promotionItem.getPromotionId() != null)
+                    .map(promotionItem -> promotionItem.getPromotionId())
+                    .collect(Collectors.toSet());
+            List<Promotion> dbActivePromotions = promotionService
+                    .getActivePromotionsByIds(promotionIds.stream().toList());
+            // <promotionId, promotion>
+            Map<Long, Promotion> promotionMap = dbActivePromotions.stream()
+                    .collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
+
+            // <serviceId, promotion>
+            Map<Long, Promotion> servicePromotionMap = new HashMap<>();
+
+            promotionItems.forEach(promotionItem -> {
+                Long promotionId = promotionItem.getPromotionId();
+                if (promotionId != null) {
+                    Long serviceId = promotionItem.getServiceId();
+                    Promotion promotion = promotionMap.get(promotionId);
+                    if (servicePromotionMap.containsKey(serviceId)) {
+                        Promotion existingPromotion = servicePromotionMap.get(serviceId);
+                        Promotion betterPromotion = promotionService.pickBetterPromotion(existingPromotion, promotion);
+                        servicePromotionMap.replace(serviceId, betterPromotion);
+
+                    } else {
+                        servicePromotionMap.put(serviceId, promotion);
+                    }
+                }
+            });
+
+            List<com.yield.barbershop_backend.model.AppointmentService> newAppointmentServices = new ArrayList<>();
+
+            for (Long serviceId : appointment.getServiceIds()) {
+                com.yield.barbershop_backend.model.AppointmentService newAppointmentService = new com.yield.barbershop_backend.model.AppointmentService();
+                Double originalPrice = dbServiceMap.get(serviceId).getPrice();
+                Double discountAmount = 0.0;
+                Double finalPrice = originalPrice;
+
+                Promotion promotion = servicePromotionMap.get(serviceId);
+
+                if (promotion != null && promotion.getMaxApplicableQuantity() > 0) {
+                    discountAmount = promotion.getDiscountAmount() != null ? promotion.getDiscountAmount()
+                            : promotion.getDiscountPercentage() * originalPrice / 100.0;
                     finalPrice = originalPrice - discountAmount;
-                    appointmentService.setPromotionId(promotion.getPromotionId());
-                    promotionsNeedingMaxApplicableQuantityUpdate.add(promotion);
+
+                    newAppointmentService.setPromotionId(servicePromotionMap.get(serviceId).getPromotionId());
+
+                    // Reduce maxApplicableQuantity
+                    promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() - 1);
+                    servicePromotionMap.replace(serviceId, promotion);
                 }
+
+                newAppointmentService.setAppointmentId(appointmentId);
+                newAppointmentService.setServiceId(serviceId);
+                newAppointmentService.setOriginalPrice(originalPrice);
+                newAppointmentService.setDiscountAmount(discountAmount);
+                newAppointmentService.setFinalPrice(finalPrice);
+
+                newAppointmentServices.add(newAppointmentService);
             }
-            
-            appointmentService.setAppointmentId(savedAppointment.getAppointmentId());
-            appointmentService.setServiceId(service.getServiceId());
-            appointmentService.setServiceName(service.getServiceName());
-            appointmentService.setOriginalPrice(originalPrice);
-            appointmentService.setDiscountAmount(discountAmount);
-            appointmentService.setFinalPrice(finalPrice);
-            return appointmentService;
-        }).collect(Collectors.toList());
 
+            Double totalAmount = newAppointmentServices.stream()
+                    .mapToDouble(com.yield.barbershop_backend.model.AppointmentService::getFinalPrice).sum();
+            existingAppointment.setTotalAmount(totalAmount);
 
-        if(promotionsNeedingMaxApplicableQuantityUpdate.size() > 0) {
-            promotionService.minusMaxApplicableQuantity(promotionsNeedingMaxApplicableQuantityUpdate.stream().map(Promotion::getPromotionId).collect(Collectors.toList()));
+            // Create new appointment services
+            List<com.yield.barbershop_backend.model.AppointmentService> createdAppointmentServices = appointmentServiceService
+                    .createAppointmentServices(newAppointmentServices);
+            existingAppointment.setAppointmentServices(createdAppointmentServices);
+
+            // save promotion minus quantity
+            List<Promotion> promotionsToUpdateMaxApplicableQuantity = servicePromotionMap.values().stream().toList();
+            promotionService.updatePromotions(promotionsToUpdateMaxApplicableQuantity);
+
+        } else {
+            // Recalculate if start time is different
+            if (!appointment.getStartTime().equals(existingAppointment.getStartTime())) {
+                Set<Long> currentServiceIds = existingAppointmentServices.stream()
+                        .map(appointmentService -> appointmentService.getServiceId()).collect(Collectors.toSet());
+                List<com.yield.barbershop_backend.model.Service> currentServices = serviceService
+                        .getActiveServicesByIds(currentServiceIds);
+                Long totalMinutes = currentServices.stream()
+                        .mapToLong(com.yield.barbershop_backend.model.Service::getDurationMinutes).sum();
+
+                LocalDateTime newStartTime = appointment.getStartTime();
+                LocalDateTime newEndTime = newStartTime.plusMinutes(totalMinutes);
+
+                // Check for appointment conflicts
+                checkAppointmentConflictExceptCurrent(newStartTime, newEndTime, appointment.getUserId(),
+                        existingAppointment.getAppointmentId());
+            }
         }
 
-        appointmentServiceService.createAppointmentServices(appointmentServices);
+        existingAppointment.setNotes(appointment.getNotes());
+        existingAppointment.setUserId(appointment.getUserId());
+        existingAppointment.setUpdatedAt(appointment.getUpdatedAt());
 
-        return savedAppointment;
+        Appointment updatedAppointment = appointmentRepo.save(existingAppointment);
+
+        return updatedAppointment;
     }
-
 
     public List<Appointment> checkAppointmentsConflict(LocalDateTime startTime, LocalDateTime endTime, Long userId) {
         return appointmentRepo.findAll(AppointmentSpecification.checkAppointmentsConflict(startTime, endTime, userId));
     }
 
-
     public void checkAppointmentConflict(LocalDateTime startTime, LocalDateTime endTime, Long userId) {
         List<Appointment> conflictingAppointments = checkAppointmentsConflict(startTime, endTime, userId);
-        if(!conflictingAppointments.isEmpty()) {
-            List<Long> conflictIds = conflictingAppointments.stream().map(Appointment::getAppointmentId).collect(Collectors.toList());
+        if (!conflictingAppointments.isEmpty()) {
+            List<Long> conflictIds = conflictingAppointments.stream().map(Appointment::getAppointmentId)
+                    .collect(Collectors.toList());
             throw new DataConflictException("Appointment time conflicts with " + conflictIds, conflictIds);
         }
     }
 
-    public void checkAppointmentConflictExceptCurrent(LocalDateTime startTime, LocalDateTime endTime, Long userId, Long currentAppointmentId) {
+    public void checkAppointmentConflictExceptCurrent(LocalDateTime startTime, LocalDateTime endTime, Long userId,
+            Long currentAppointmentId) {
         List<Appointment> conflictingAppointments = checkAppointmentsConflict(startTime, endTime, userId);
 
         conflictingAppointments.removeIf(appointment -> appointment.getAppointmentId().equals(currentAppointmentId));
 
-        if(!conflictingAppointments.isEmpty()) {
-            List<Long> conflictIds = conflictingAppointments.stream().map(Appointment::getAppointmentId).collect(Collectors.toList());
+        if (!conflictingAppointments.isEmpty()) {
+            List<Long> conflictIds = conflictingAppointments.stream().map(Appointment::getAppointmentId)
+                    .collect(Collectors.toList());
             throw new DataConflictException("Appointment time conflicts with " + conflictIds, conflictIds);
         }
     }
@@ -414,7 +446,8 @@ public class  AppointmentService {
         Appointment appointment = getAppointmentById(appointmentId);
 
         if (appointment.getStatus().equals("Cancelled") || appointment.getStatus().equals("Completed")) {
-            throw new DataConflictException("Cannot update status of appointment with status: " + appointment.getStatus());
+            throw new DataConflictException(
+                    "Cannot update status of appointment with status: " + appointment.getStatus());
         }
         appointment.setStatus(status.getStatus());
         appointmentRepo.save(appointment);
@@ -422,12 +455,10 @@ public class  AppointmentService {
 
     public void cancelAppointment(Long appointmentId) {
 
-
         Long currentCustomerId = 1L; // Replace with actual method to get current customer ID
 
         Appointment appointment = appointmentRepo.findByAppointmentIdAndCustomerId(appointmentId, currentCustomerId)
-        .orElseThrow(() -> new DataNotFoundException("Appointment not found with id: " + appointmentId));
-
+                .orElseThrow(() -> new DataNotFoundException("Appointment not found with id: " + appointmentId));
 
         if (appointment.getStatus().equals("Cancelled")) {
             throw new DataConflictException("Appointment is already cancelled");
@@ -437,26 +468,30 @@ public class  AppointmentService {
             throw new DataConflictException("Cannot cancel a completed appointment");
         }
 
-        List<com.yield.barbershop_backend.model.AppointmentService> appointmentServices = appointment.getAppointmentServices();
+        List<com.yield.barbershop_backend.model.AppointmentService> newAppointmentServices = appointment
+                .getAppointmentServices();
 
-        List<com.yield.barbershop_backend.model.AppointmentService> discountAppointService = appointmentServices.stream().filter(item -> {
-            if (item.getDiscountAmount() > 0.0) {
-                return true;
-            }
-            return false;
-        }).toList();
+        List<com.yield.barbershop_backend.model.AppointmentService> discountAppointService = newAppointmentServices
+                .stream().filter(item -> {
+                    if (item.getDiscountAmount() > 0.0) {
+                        return true;
+                    }
+                    return false;
+                }).toList();
 
-        if(discountAppointService.size() > 0) {
+        if (discountAppointService.size() > 0) {
 
-            List<Long> promotionIds = discountAppointService.stream().map(item -> item.getPromotionId()).collect(Collectors.toList());
+            List<Long> promotionIds = discountAppointService.stream().map(item -> item.getPromotionId())
+                    .collect(Collectors.toList());
 
             // PromotionId, Promotion
-            Map<Long, Promotion> promotions = promotionService.getActivePromotionsByIds(promotionIds).stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
+            Map<Long, Promotion> promotions = promotionService.getActivePromotionsByIds(promotionIds).stream()
+                    .collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
 
-            if(promotions.size() > 0) {
+            if (promotions.size() > 0) {
                 promotionIds.stream().forEach(id -> {
                     Promotion promotion = promotions.get(id);
-                    if(promotion != null) {
+                    if (promotion != null) {
                         promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() + 1);
                         promotions.replace(id, promotion);
                     }
@@ -464,7 +499,6 @@ public class  AppointmentService {
             }
             promotionService.updatePromotions(promotions.values().stream().toList());
         }
-
 
         appointment.setStatus("Cancelled");
         appointmentRepo.save(appointment);

@@ -17,12 +17,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateAppointmentDTO {
 
+    private Long customerId;
+
     @NotNull(message = "User ID is required")
     private Long userId;
-    @NotBlank(message = "Start time is required")
+
+    @NotBlank(message = "Start time is required")  
     private LocalDateTime startTime;
+
     @NotEmpty(message = "Service IDs are required")
     private ArrayList<Long> serviceIds;
+
     @NotNull(message = "Notes are required")
     private String notes;
     @Null

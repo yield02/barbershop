@@ -24,6 +24,7 @@ JpaRepository<Service, Long>,
    List<Service> findExistedIds(List<Long> serviceIds);
 
 
+   @EntityGraph(attributePaths = {"promotionItems"})
    @Query("SELECT s FROM services s WHERE s.serviceId IN :serviceIds AND s.isActive = true")
    List<Service> getActiveServicesByIds(Set<Long> serviceIds);
 }

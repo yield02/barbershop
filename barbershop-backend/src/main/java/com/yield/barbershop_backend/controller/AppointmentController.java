@@ -8,11 +8,17 @@ import com.yield.barbershop_backend.dto.PagedResponse;
 import com.yield.barbershop_backend.dto.appointment.AppointmentFilterDTO;
 import com.yield.barbershop_backend.dto.appointment.CreateAppointmentDTO;
 import com.yield.barbershop_backend.dto.appointment.UpdateAppointmentDTO;
+import com.yield.barbershop_backend.exception.DataNotFoundException;
+import com.yield.barbershop_backend.model.AccountPrincipal;
 import com.yield.barbershop_backend.model.Appointment;
 import com.yield.barbershop_backend.service.AppointmentService;
 
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -47,7 +53,23 @@ public class AppointmentController {
     }
 
     @PostMapping("")
-    public ResponseEntity<ApiResponse<Appointment>> createAppointment(@RequestBody CreateAppointmentDTO appointment) {
+    public ResponseEntity<ApiResponse<Appointment>> createAppointment(@RequestBody CreateAppointmentDTO appointment) throws BadRequestException {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        AccountPrincipal  accountPrincipal = (AccountPrincipal) authentication.getPrincipal();
+
+        Boolean isUser = authentication.getAuthorities().stream().anyMatch(role -> role.getAuthority().equals("ROLE_CUSTOMER"));
+
+        if(isUser && appointment.getCustomerId() != accountPrincipal.getId()) {
+            throw new AccessDeniedException("You don't have permisson to create an appointment for other people"); 
+        }
+        else {
+            if(appointment.getCustomerId() == null) {
+                throw new BadRequestException("Customer id is required");
+            }
+        }
+
         Appointment createdAppointment = appointmentService.createAppointment(appointment);
         return ResponseEntity.created(null).body(new ApiResponse<>(
             true,
@@ -57,7 +79,21 @@ public class AppointmentController {
     }
 
     @PutMapping("/{appointmentId}")
-    public ResponseEntity<ApiResponse<Appointment>> updateAppointment(@PathVariable Long appointmentId, @RequestBody UpdateAppointmentDTO appointment) {
+    public ResponseEntity<ApiResponse<Appointment>> updateAppointment(@PathVariable Long appointmentId, @RequestBody UpdateAppointmentDTO appointment) throws java.nio.file.AccessDeniedException {
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        AccountPrincipal  accountPrincipal = (AccountPrincipal) authentication.getPrincipal();
+
+        Boolean isUser = authentication.getAuthorities().stream().anyMatch(role -> role.getAuthority().equals("ROLE_CUSTOMER"));
+
+        if(isUser) {
+            appointment.setCustomerId(accountPrincipal.getId());
+        }
+        else {
+            appointment.setCustomerId(null);
+        }
+
         Appointment updatedAppointment = appointmentService.updateAppointment(appointmentId, appointment);
         return ResponseEntity.ok(new ApiResponse<>(
             true,

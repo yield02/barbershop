@@ -3,6 +3,7 @@ package com.yield.barbershop_backend.exception;
 
 import java.util.List;
 
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -62,5 +63,12 @@ public class GlobalControllerExceptionHandler {
         ErrorDetail errorDetail  = new ErrorDetail("FORBIDDEN", "You are not authorized", List.of());
         ApiResponse<ErrorDetail> apiResponse = new ApiResponse<>(false, "You are not authorized", errorDetail);
         return new ResponseEntity<>(apiResponse, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse<ErrorDetail>> handleIllegalArgumentException(BadRequestException e) {
+        ErrorDetail errorDetail  = new ErrorDetail("BAD_REQUEST", e.getMessage(), List.of());
+        ApiResponse<ErrorDetail> apiResponse = new ApiResponse<>(false, e.getMessage(), errorDetail);
+        return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
     }
 }
