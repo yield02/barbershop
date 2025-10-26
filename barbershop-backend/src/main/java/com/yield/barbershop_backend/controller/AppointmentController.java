@@ -110,7 +110,12 @@ public class AppointmentController {
 
     @PatchMapping("/{appointmentId}/status/cancelled")
     public ResponseEntity<ApiResponse<Void>> cancelAppointment(@PathVariable Long appointmentId) {
-        appointmentService.cancelAppointment(appointmentId);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        AccountPrincipal currentUser = (AccountPrincipal) auth.getPrincipal();
+
+        appointmentService.cancelAppointment(appointmentId, currentUser.getId());
         return ResponseEntity.noContent().build();
     }
 

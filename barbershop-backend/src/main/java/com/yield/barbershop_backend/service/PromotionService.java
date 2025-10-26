@@ -50,7 +50,8 @@ public class PromotionService {
         return promotionRepo.getActivePromotionsByIds(promotionIds, PromotionSpecification.getActivePromotions());
     }
 
-        public List<Promotion> getActivePromotionsByIds(List<Long> promotionIds, Date promotionDate) {
+    public List<Promotion> getActivePromotionsByIds(List<Long> promotionIds, Date promotionDate) {
+        System.out.println(promotionDate);
         return promotionRepo.getActivePromotionsByIds(promotionIds, PromotionSpecification.getActivePromotions(promotionDate));
     }
 

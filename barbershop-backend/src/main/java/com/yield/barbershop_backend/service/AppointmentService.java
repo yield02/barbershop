@@ -1,6 +1,5 @@
 package com.yield.barbershop_backend.service;
 
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -15,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -367,6 +367,7 @@ public class AppointmentService {
                 }
 
                 newAppointmentService.setAppointmentId(appointmentId);
+                newAppointmentService.setServiceName(dbServiceMap.get(serviceId).getServiceName());
                 newAppointmentService.setServiceId(serviceId);
                 newAppointmentService.setOriginalPrice(originalPrice);
                 newAppointmentService.setDiscountAmount(discountAmount);
@@ -453,12 +454,15 @@ public class AppointmentService {
         appointmentRepo.save(appointment);
     }
 
-    public void cancelAppointment(Long appointmentId) {
-
-        Long currentCustomerId = 1L; // Replace with actual method to get current customer ID
+    @Transactional
+    public void cancelAppointment(Long appointmentId, Long currentCustomerId) {
 
         Appointment appointment = appointmentRepo.findByAppointmentIdAndCustomerId(appointmentId, currentCustomerId)
                 .orElseThrow(() -> new DataNotFoundException("Appointment not found with id: " + appointmentId));
+
+        if(!appointment.getCustomerId().equals(currentCustomerId)) {
+            throw new AccessDeniedException("You don't have permission to cancel this appointment");
+        }
 
         if (appointment.getStatus().equals("Cancelled")) {
             throw new DataConflictException("Appointment is already cancelled");
@@ -471,34 +475,23 @@ public class AppointmentService {
         List<com.yield.barbershop_backend.model.AppointmentService> newAppointmentServices = appointment
                 .getAppointmentServices();
 
-        List<com.yield.barbershop_backend.model.AppointmentService> discountAppointService = newAppointmentServices
-                .stream().filter(item -> {
-                    if (item.getDiscountAmount() > 0.0) {
-                        return true;
-                    }
-                    return false;
-                }).toList();
+        List<Long> promotionIds = newAppointmentServices.stream().filter(appointmentService -> {
+            return appointmentService.getPromotionId() != null;
+        }).map(com.yield.barbershop_backend.model.AppointmentService::getPromotionId).toList();
 
-        if (discountAppointService.size() > 0) {
+        // <promotionId, promotion>
+        List<Promotion> promotions = promotionService.getActivePromotionsByIds(promotionIds, appointment.getCreatedAt());
+        Map<Long, Promotion> promotionsMap = promotions.stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
 
-            List<Long> promotionIds = discountAppointService.stream().map(item -> item.getPromotionId())
-                    .collect(Collectors.toList());
-
-            // PromotionId, Promotion
-            Map<Long, Promotion> promotions = promotionService.getActivePromotionsByIds(promotionIds).stream()
-                    .collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
-
-            if (promotions.size() > 0) {
-                promotionIds.stream().forEach(id -> {
-                    Promotion promotion = promotions.get(id);
-                    if (promotion != null) {
-                        promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() + 1);
-                        promotions.replace(id, promotion);
-                    }
-                });
+        promotionIds.forEach(promotionId -> {
+            Promotion promotion = promotionsMap.get(promotionId);
+            if(promotion != null) {
+                promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() + 1);
+                promotionsMap.replace(promotionId, promotion);
             }
-            promotionService.updatePromotions(promotions.values().stream().toList());
-        }
+        });
+
+        promotionService.updatePromotions(promotionsMap.values().stream().toList());
 
         appointment.setStatus("Cancelled");
         appointmentRepo.save(appointment);
