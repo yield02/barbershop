@@ -326,9 +326,11 @@ public class OrderService {
 
         Order newOrder = new Order();
         newOrder.setCustomerName(order.getCustomerName() != null ? order.getCustomerName() : customer.getFullName());
-        newOrder.setCustomerPhone(order.getCustomerPhone() != null ? order.getCustomerPhone() : customer.getPhoneNumber());
+        newOrder.setCustomerPhone(
+                order.getCustomerPhone() != null ? order.getCustomerPhone() : customer.getPhoneNumber());
         newOrder.setCustomerEmail(order.getCustomerEmail() != null ? order.getCustomerEmail() : customer.getEmail());
-        newOrder.setCustomerAddress(order.getCustomerAddress() != null ? order.getCustomerAddress() : customer.getAddress());
+        newOrder.setCustomerAddress(
+                order.getCustomerAddress() != null ? order.getCustomerAddress() : customer.getAddress());
         newOrder.setCustomerId(customer.getCustomerId());
         newOrder.setUserId(user != null ? user.getUserId() : null);
         newOrder.setOrderItems(orderItemsList);
@@ -367,7 +369,7 @@ public class OrderService {
         // Save order
         orderRepo.save(order);
 
-        if (!order.getStatus().equals(OrderStatus.Cancelled)) {
+        if (!status.equals(OrderStatus.Cancelled)) {
             return;
         }
 
@@ -405,6 +407,24 @@ public class OrderService {
             });
             productService.saveProducts(dbProducts);
         }
+
+        // Return MaxapplicableQuantity
+
+        Map<Long, Promotion> promotionMap = promotionService
+                .getActivePromotionsByIds(
+                        dbOrderItems.stream().filter(orderItem -> orderItem.getPromotionId() != null)
+                                .map(OrderItem::getPromotionId).toList(),
+                        order.getCreatedAt())
+                .stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
+
+        dbOrderItems.forEach(orderItem -> {
+            if (orderItem.getPromotionId() != null) {
+                Promotion promotion = promotionMap.get(orderItem.getPromotionId());
+                promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() + orderItem.getQuantity());
+                promotionMap.replace(orderItem.getPromotionId(), promotion);
+            }
+        });
+        promotionService.updatePromotions(promotionMap.values().stream().toList());
     }
 
     @Transactional
@@ -736,5 +756,26 @@ public class OrderService {
         order.setUpdatedAt(new Date(System.currentTimeMillis()));
         orderRepo.save(order);
         // 4.[Update order status and updateTime] END
+
+        // 5.[Return MaxApplicableQuantity Promotions] Start
+
+        Map<Long, Promotion> promotionMap = promotionService
+                .getActivePromotionsByIds(
+                        orderItems.stream().filter(orderItem -> orderItem.getPromotionId() != null)
+                                .map(OrderItem::getPromotionId).toList(),
+                        order.getCreatedAt())
+                .stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
+
+        orderItems.forEach(orderItem -> {
+            if (orderItem.getPromotionId() != null) {
+                Promotion promotion = promotionMap.get(orderItem.getPromotionId());
+                promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() + orderItem.getQuantity());
+                promotionMap.replace(orderItem.getPromotionId(), promotion);
+            }
+        });
+        promotionService.updatePromotions(promotionMap.values().stream().toList());
+
+        // 5.[Return MaxApplicableQuantity Promotions] End
+
     }
 }
