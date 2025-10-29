@@ -67,10 +67,18 @@ public class OrderController {
         Boolean isAdmin = true;
 
         if(principal.getAuthorities().stream().anyMatch(role -> role.toString().equals("[ROLE_CUSTOMER]"))){
-            System.out.println("Customer Create ID: " + principal.getId());
+
             orderCreateDTO.setCustomerId(principal.getId());
             orderCreateDTO.setUserId(null);
             isAdmin = false;
+
+        }
+
+        if(!isAdmin) {
+
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            AccountPrincipal currentUser = (AccountPrincipal) auth.getPrincipal();
+            orderCreateDTO.setCustomerId(currentUser.getId());
         }
 
         return ResponseEntity.created(null).body(new ApiResponse<Order>(true, "", orderService.createOrder(orderCreateDTO, isAdmin)));

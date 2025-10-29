@@ -21,6 +21,10 @@ public class OrderCreateDTO {
     @NotEmpty(message = "Notes are required")
     private String notes;
 
+    private String customerName;
+    private String customerPhone;
+    private String customerEmail;
+    private String customerAddress;
 
 
     private ArrayList<OrderProductItemCreateDTO> products;

@@ -1,5 +1,6 @@
 package com.yield.barbershop_backend.service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -52,7 +53,8 @@ public class PromotionService {
 
     public List<Promotion> getActivePromotionsByIds(List<Long> promotionIds, Date promotionDate) {
         System.out.println(promotionDate);
-        return promotionRepo.getActivePromotionsByIds(promotionIds, PromotionSpecification.getActivePromotions(promotionDate));
+        return promotionRepo.getActivePromotionsByIds(promotionIds,
+                PromotionSpecification.getActivePromotions(promotionDate));
     }
 
     @Transactional
@@ -148,7 +150,7 @@ public class PromotionService {
         });
 
         promotionItemService.savePromotionItems(promotionItems);
- 
+
         return savedPromotion;
     }
 
@@ -354,7 +356,12 @@ public class PromotionService {
     public void updatePromotions(List<Promotion> promotions) {
         promotionRepo.saveAll(promotions);
     }
+
     public Promotion pickBetterPromotion(Promotion existing, Promotion candidate) {
+
+        if (existing == null && candidate == null)
+            return null;
+
         if (existing == null)
             return candidate;
         if (candidate == null)
@@ -375,5 +382,27 @@ public class PromotionService {
         Double candidatePct = candidate.getDiscountPercentage() == null ? 0.0 : candidate.getDiscountPercentage();
 
         return candidatePct > existingPct ? candidate : existing;
+    }
+
+    public Double calculateTotalPriceWithMaxDiscountQuantity(
+            Double unitPrice, // price per unit
+            Long totalQuantity, // total quantity
+            Long maxApplicableQuantity,
+            Double unitDiscountAmount // discountAmount per unit not percentage
+    ) {
+        if (totalQuantity <= maxApplicableQuantity) {
+            return unitPrice * totalQuantity - unitDiscountAmount * totalQuantity;
+        }
+
+        Double totalDiscountAmount = maxApplicableQuantity * unitDiscountAmount;
+
+        return unitPrice * totalQuantity - totalDiscountAmount;
+    }
+
+    public Double calculateTotalDiscountWithMaxDiscountQuantity(Long totalQuantity, Long maxApplicableQuantity, Double unitDiscountAmount) {
+        if (totalQuantity <= maxApplicableQuantity) {
+            return unitDiscountAmount * totalQuantity;
+        }
+        return maxApplicableQuantity * unitDiscountAmount;
     }
 }

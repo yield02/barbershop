@@ -34,6 +34,7 @@ public class Order {
     private String customerName;
     private String customerPhone;
     private String customerEmail;
+    private String customerAddress;
     private Double totalAmount;
     
     @Enumerated(EnumType.STRING)

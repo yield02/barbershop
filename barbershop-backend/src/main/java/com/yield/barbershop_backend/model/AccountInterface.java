@@ -6,4 +6,5 @@ public interface AccountInterface {
     public String getPassword();
     public Boolean getIsActive();
     public String getRole();
+    // public Boolean isPersonalInfoComplete();
 }
