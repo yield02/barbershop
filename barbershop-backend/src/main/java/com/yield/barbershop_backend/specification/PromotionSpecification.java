@@ -13,27 +13,27 @@ import jakarta.persistence.criteria.Predicate;
 
 public class PromotionSpecification {
     
-    public static Specification<Promotion> getActivePromotions() {
+    public static Specification<Promotion> getActivePromotions(List<Long> promotionIds) {
         return (root, query, cb) -> {
 
             List<Predicate> predicates = new ArrayList<>();
-            
-            Date date = new Date();
-            predicates.add(cb.greaterThanOrEqualTo(root.get("startDate"), date));
-            predicates.add(cb.lessThanOrEqualTo(root.get("endDate"), date));
-            predicates.add(cb.greaterThan(root.get("maxApplicableQuantity"), 0));
+            Date date = new Date(System.currentTimeMillis());
+            predicates.add(cb.in(root.get("promotionId")).value(promotionIds.stream().filter(id -> id != null).toList()));
+            predicates.add(cb.lessThanOrEqualTo(root.get("startDate"), date));
+            predicates.add(cb.greaterThanOrEqualTo(root.get("endDate"), date));
+            predicates.add(cb.greaterThan(root.get("maxApplicableQuantity"), 0L));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 
-        public static Specification<Promotion> getActivePromotions(Date date) {
+        public static Specification<Promotion> getActivePromotions(List<Long> promotionIds, Date date) {
         return (root, query, cb) -> {
-
             List<Predicate> predicates = new ArrayList<>();
-            predicates.add(cb.greaterThanOrEqualTo(root.get("startDate"), date));
-            predicates.add(cb.lessThanOrEqualTo(root.get("endDate"), date));
-            predicates.add(cb.greaterThan(root.get("maxApplicableQuantity"), 0));
+            predicates.add(cb.in(root.get("promotionId")).value(promotionIds.stream().filter(id -> id != null).toList()));
+            predicates.add(cb.lessThanOrEqualTo(root.get("startDate"), date));
+            predicates.add(cb.greaterThanOrEqualTo(root.get("endDate"), date));
+            predicates.add(cb.greaterThan(root.get("maxApplicableQuantity"), 0L));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -49,11 +49,11 @@ public class PromotionSpecification {
             }
 
             if(filter.getStartDate() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("startDate"), filter.getStartDate()));
+                predicates.add(cb.lessThanOrEqualTo(root.get("startDate"), filter.getStartDate()));
             }
 
             if(filter.getEndDate() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("endDate"), filter.getEndDate()));
+                predicates.add(cb.greaterThanOrEqualTo(root.get("endDate"), filter.getEndDate()));
             }
 
             if(filter.getMaxDiscountPercentage() != null) {
@@ -68,6 +68,14 @@ public class PromotionSpecification {
                 predicates.add(cb.equal(root.get("isActive"), filter.getIsActive()));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<Promotion> getPromotionsByIds(List<Long> promotionIds) {
+        return (root, query, cb) -> {
+            List<Long> filteredPromotions = promotionIds.stream().filter(id -> id != null).toList();
+
+            return cb.in(root.get("promotionId")).value(filteredPromotions);
         };
     }
 

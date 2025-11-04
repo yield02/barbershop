@@ -48,13 +48,17 @@ public class PromotionService {
     private DrinkService drinkService;
 
     public List<Promotion> getActivePromotionsByIds(List<Long> promotionIds) {
-        return promotionRepo.getActivePromotionsByIds(promotionIds, PromotionSpecification.getActivePromotions());
+        return promotionRepo.findAll(PromotionSpecification.getActivePromotions(promotionIds));
     }
 
     public List<Promotion> getActivePromotionsByIds(List<Long> promotionIds, Date promotionDate) {
-        System.out.println(promotionDate);
-        return promotionRepo.getActivePromotionsByIds(promotionIds,
-                PromotionSpecification.getActivePromotions(promotionDate));
+        System.out.println(promotionIds + " " + promotionDate);
+
+        return promotionRepo.findAll(PromotionSpecification.getActivePromotions(promotionIds,promotionDate));
+    }
+
+    public List<Promotion> getPromotionsByIds(List<Long> promotionIds) {
+        return promotionRepo.findAll(PromotionSpecification.getPromotionsByIds(promotionIds));
     }
 
     @Transactional
@@ -400,9 +404,23 @@ public class PromotionService {
     }
 
     public Double calculateTotalDiscountWithMaxDiscountQuantity(Long totalQuantity, Long maxApplicableQuantity, Double unitDiscountAmount) {
+        
         if (totalQuantity <= maxApplicableQuantity) {
             return unitDiscountAmount * totalQuantity;
         }
         return maxApplicableQuantity * unitDiscountAmount;
     }
+
+    public Long calculateReturnMaxApplicableQuantity(Double totalOriginalPrice, Long totalQuantity, Double totalDiscountAmount, Promotion promotion) {
+        
+        if(promotion.getDiscountAmount() != null) {
+            return (long) Math.ceil((totalDiscountAmount) / promotion.getDiscountAmount());
+        }
+
+        if(promotion.getDiscountPercentage() != null) {
+            return (long) Math.ceil(totalDiscountAmount * totalQuantity * 100 / totalOriginalPrice / promotion.getDiscountPercentage());
+        }
+
+        return 0L;
+    } 
 }
