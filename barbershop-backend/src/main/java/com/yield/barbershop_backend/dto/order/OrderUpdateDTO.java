@@ -13,7 +13,6 @@ public class OrderUpdateDTO {
     @NotBlank(message = "Notes are required")
     private String notes;
 
-    @NotNull(message = "Customer ID is required")
     private Long customerId;
     
     private ArrayList<OrderProductItemCreateDTO> products;

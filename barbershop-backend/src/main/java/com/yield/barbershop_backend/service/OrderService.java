@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -428,7 +429,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Order updateOrder(Long orderId, OrderUpdateDTO order) {
+    public Order updateOrder(Long orderId, OrderUpdateDTO order, Boolean isAdmin) {
 
         Order existingOrder = orderRepo.findById(orderId)
                 .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
@@ -439,6 +440,12 @@ public class OrderService {
             throw new DataConflictException("Cannot update order with status: " + existingOrder.getStatus());
         }
         // 1.[Check order status] End
+
+        // 2.[Check owner] Start
+        if (order.getCustomerId() != null && !existingOrder.getCustomerId().equals(order.getCustomerId()) && !isAdmin) {
+            throw new AccessDeniedException("You don't have permission to update this order");
+        }
+        // 2.[Check owner] End
 
         // Get all new drinks and products id
         Map<Long, Long> newDrinkIdsAndQuantity = order.getDrinks().stream().collect(
@@ -503,6 +510,7 @@ public class OrderService {
 
         // If new products and drinks are difference old products and drinks then return
         // quantity to old products and drinks
+        // maxapplicable quantity to promotion for old products and drinks
         // Check stock new products and drinks
         // Delete old orderItems
         // then minus quantity to new products and drinks
@@ -535,10 +543,36 @@ public class OrderService {
             // [Plus Drink Stock, Product Stock and save to database] End
             // 3.[get orderItems to return the quantity of Product or Drink] End
 
-            // 4.[Delete order items existed] Start
+            // 4.[Return promotion MaxapplicableQuantity] Start
+
+            List<Promotion> oldPromotions = promotionService
+                    .getPromotionsByIds(
+                            oldOrderItems
+                                    .stream()
+                                    .map(OrderItem::getPromotionId).filter(id -> id != null).toList()); // TODO: check
+                                                                                                        // createdAt
+
+            Map<Long, Promotion> oldPromotionMap = oldPromotions
+                    .stream().collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
+
+            oldOrderItems.forEach(item -> {
+                if (item.getPromotionId() != null) {
+                    Promotion promotion = oldPromotionMap.get(item.getPromotionId());
+                    promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity()
+                            + promotionService.calculateReturnMaxApplicableQuantity(item.getOriginalPrice(),
+                                    item.getQuantity(), item.getDiscountAmount(), promotion));
+                    oldPromotionMap.replace(item.getPromotionId(), promotion);
+                }
+            });
+
+            promotionService.updatePromotions(oldPromotionMap.values().stream().toList());
+
+            // 4.[Return promotion MaxapplicableQuantity] End
+
+            // 5.[Delete order items existed] Start
             orderItemService.deleteOrderItemsByOrderId(orderId);
-            // 4.[Delete order items existed] End
-            // 5.[Check order new item is out of stock] Start
+            // 5.[Delete order items existed] End
+            // 6.[Check order new item is out of stock] Start
             Map<String, List<Long>> itemIsOutOfStock = new HashMap<>();
 
             if (newDrinks.size() > 0) {
@@ -567,9 +601,9 @@ public class OrderService {
                 throw new DataNotFoundException("Item out of stock", List.of(itemIsOutOfStock));
             }
 
-            // 5.[Check order new item is out of stock] End
+            // 6.[Check order new item is out of stock] End
 
-            // 6. [Minus stock for new item] Start
+            // 7. [Minus stock for new item] Start
 
             if (newDrinks.size() > 0) {
                 newDrinks.forEach(drink -> {
@@ -586,9 +620,9 @@ public class OrderService {
                 });
                 productService.saveProducts(newProducts);
             }
-            // 6. [Minus stock for new Item] End
+            // 7. [Minus stock for new Item] End
 
-            // 7. [Create new OrderItems] Start
+            // 8. [Create new OrderItems] Start
 
             List<PromotionItem> promotionItems = new ArrayList<>();
 
@@ -599,66 +633,95 @@ public class OrderService {
             List<Long> promotionIds = promotionItems.stream().map(PromotionItem::getPromotionId)
                     .collect(Collectors.toList());
 
-            Map<Long, Promotion> activePromotions = promotionService.getActivePromotionsByIds(promotionIds)
+            // <promotionId, Promotion>
+            Map<Long, Promotion> activePromotionsMap = promotionService.getActivePromotionsByIds(promotionIds)
                     .stream()
                     .collect(Collectors.toMap(Promotion::getPromotionId, promotion -> promotion));
 
-            // <drinkId, PromotionItem>
-            Map<Long, PromotionItem> activeDrinkItems = promotionItems.stream()
-                    .filter(promotionItem -> (promotionItem.getDrinkId() != null
-                            && activePromotions.get(promotionItem.getPromotionId()) != null))
-                    .collect(Collectors.toMap(PromotionItem::getDrinkId, promotionItem -> promotionItem));
+            // <drinkId, PromotionId>
+            Map<Long, Long> activeDrinkPromotionMap = new HashMap<>();
+            // <productId, PromotionId>
+            Map<Long, Long> activeProductPromotionMap = new HashMap<>();
 
-            // <productId, PromotionItem>
-            Map<Long, PromotionItem> activeProductItems = promotionItems.stream()
-                    .filter(promotionItem -> (promotionItem.getProductId() != null
-                            && activePromotions.get(promotionItem.getPromotionId()) != null))
-                    .collect(Collectors.toMap(PromotionItem::getProductId, promotionItem -> promotionItem));
+            promotionItems.forEach(item -> {
+                Long promotionId = item.getPromotionId();
+                Promotion promotion = activePromotionsMap.get(promotionId);
+                if (promotion != null) {
+                    if (item.getDrinkId() != null) {
+                        Long existingPromotionId = activeDrinkPromotionMap.get(item.getDrinkId());
+                        if (existingPromotionId != null) {
+
+                            Promotion existingPromotion = activePromotionsMap.get(existingPromotionId);
+                            Promotion bestPromotion = promotionService.pickBetterPromotion(promotion,
+                                    existingPromotion);
+                            activeDrinkPromotionMap.replace(item.getDrinkId(), bestPromotion.getPromotionId());
+                            return;
+                        }
+                        activeDrinkPromotionMap.put(item.getDrinkId(), promotion.getPromotionId());
+
+                    } else if (item.getProductId() != null) {
+
+                        Long existingPromotionId = activeProductPromotionMap.get(item.getProductId());
+                        if (existingPromotionId != null) {
+
+                            Promotion existingPromotion = activePromotionsMap.get(existingPromotionId);
+                            Promotion bestPromotion = promotionService.pickBetterPromotion(promotion,
+                                    existingPromotion);
+                            activeProductPromotionMap.replace(item.getProductId(), bestPromotion.getPromotionId());
+                            return;
+                        }
+                        activeProductPromotionMap.put(item.getProductId(), promotion.getPromotionId());
+
+                    }
+                }
+
+            });
 
             newDrinks.forEach(drink -> {
                 Long quantity = newDrinkIdsAndQuantity.get(drink.getDrinkId());
 
-                PromotionItem promotionItem = activeDrinkItems.get(drink.getDrinkId());
+                Long promotionId = activeDrinkPromotionMap.get(drink.getDrinkId());
                 Double originalPrice = drink.getPrice() * quantity;
                 Double discountAmount = 0.0;
                 Double finalPrice = originalPrice;
-                if (promotionItem != null) {
-                    Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
-                    if (promotion.getDiscountAmount() != null) {
-                        discountAmount = promotion.getDiscountAmount() * quantity;
-                    } else if (promotion.getDiscountPercentage() != null) {
-                        discountAmount = (originalPrice * promotion.getDiscountPercentage()) / 100.0;
-                    }
-                    finalPrice = originalPrice - discountAmount;
-                }
+
                 OrderItem newOrderItem = OrderItem.builder()
                         .drinkId(drink.getDrinkId())
                         .quantity(quantity)
                         .orderId(orderId)
                         .name(drink.getDrinkName())
                         .originalPrice(originalPrice)
-                        .discountAmount(discountAmount)
-                        .finalPrice(finalPrice)
                         .build();
+
+                Promotion promotion = activePromotionsMap.get(promotionId);
+                if (promotionId != null && promotion != null) {
+                    discountAmount = promotionService.calculateTotalDiscountWithMaxDiscountQuantity(quantity,
+                            promotion.getMaxApplicableQuantity(),
+                            promotion.getDiscountAmount() != null ? promotion.getDiscountAmount()
+                                    : promotion.getDiscountPercentage() * drink.getPrice());
+
+                    finalPrice = originalPrice - discountAmount;
+                    newOrderItem.setPromotionId(promotionId);
+
+                    // Minus promotion max applicable quantity
+                    promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() - quantity >= 0
+                            ? promotion.getMaxApplicableQuantity() - quantity
+                            : 0);
+                    activePromotionsMap.replace(promotion.getPromotionId(), promotion);
+                }
+
+                newOrderItem.setDiscountAmount(discountAmount);
+                newOrderItem.setFinalPrice(finalPrice);
                 newOrderItems.add(newOrderItem);
             });
 
             newProducts.forEach(product -> {
                 Long quantity = newProductIdsAndQuantity.get(product.getProductId());
+                Long promotionId = activeProductPromotionMap.get(product.getProductId());
 
-                PromotionItem promotionItem = activeProductItems.get(product.getProductId());
                 Double originalPrice = product.getPrice() * quantity;
                 Double discountAmount = 0.0;
                 Double finalPrice = originalPrice;
-                if (promotionItem != null) {
-                    Promotion promotion = activePromotions.get(promotionItem.getPromotionId());
-                    if (promotion.getDiscountAmount() != null) {
-                        discountAmount = promotion.getDiscountAmount() * quantity;
-                    } else if (promotion.getDiscountPercentage() != null) {
-                        discountAmount = (originalPrice * promotion.getDiscountPercentage()) / 100.0;
-                    }
-                    finalPrice = originalPrice - discountAmount;
-                }
 
                 OrderItem newOrderItem = OrderItem.builder()
                         .productId(product.getProductId())
@@ -666,33 +729,59 @@ public class OrderService {
                         .orderId(orderId)
                         .name(product.getProductName())
                         .originalPrice(originalPrice)
-                        .discountAmount(discountAmount)
-                        .finalPrice(finalPrice)
                         .build();
+
+                Promotion promotion = activePromotionsMap.get(promotionId);
+
+                if (promotionId != null && promotion != null) {
+
+                    discountAmount = promotionService.calculateTotalDiscountWithMaxDiscountQuantity(quantity,
+                            promotion.getMaxApplicableQuantity(),
+                            promotion.getDiscountAmount() != null ? promotion.getDiscountAmount()
+                                    : promotion.getDiscountPercentage() * product.getPrice());
+
+                    finalPrice = originalPrice - discountAmount;
+                    newOrderItem.setPromotionId(promotionId);
+
+                    // Minus promotion max applicable quantity
+                    promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() - quantity >= 0
+                            ? promotion.getMaxApplicableQuantity() - quantity
+                            : 0);
+                    activePromotionsMap.replace(promotion.getPromotionId(), promotion);
+
+                }
+
+                newOrderItem.setDiscountAmount(discountAmount);
+                newOrderItem.setFinalPrice(finalPrice);
+
                 newOrderItems.add(newOrderItem);
             });
+            // Save promotions
 
-            orderItemService.createOrderItems(newOrderItems);
-            // 7. [Create new OrderItems] End
+            promotionService.updatePromotions(activePromotionsMap.values().stream().toList());
+
+            List<OrderItem> savedOrderItems = orderItemService.createOrderItems(newOrderItems);
+
+            existingOrder.setOrderItems(savedOrderItems);
+            // 8. [Create new OrderItems] End
         }
 
-        // 8.[Update order status and updateTime] Start
+        // 9.[Update order status and updateTime] Start
 
-        if (order.getCustomerId() != existingOrder.getCustomer().getCustomerId()) {
+        if (order.getCustomerId() != existingOrder.getCustomer().getCustomerId() && isAdmin) {
             Customer newCustomer = customerService.getCustomerById(order.getCustomerId());
             existingOrder.setCustomer(newCustomer);
             existingOrder.setCustomerName(newCustomer.getFullName());
             existingOrder.setCustomerEmail(newCustomer.getEmail());
             existingOrder.setCustomerPhone(newCustomer.getPhoneNumber());
         }
-
         existingOrder.setNotes(order.getNotes());
         existingOrder.setUpdatedAt(new Date(System.currentTimeMillis()));
         Order savedOrder = orderRepo.save(existingOrder);
         if (isDifferenceItems) {
             savedOrder.setOrderItems(newOrderItems);
         }
-        // 8.[Update order status and updateTime] End
+        // 9.[Update order status and updateTime] End
 
         return savedOrder;
     }

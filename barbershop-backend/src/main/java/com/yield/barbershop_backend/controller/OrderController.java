@@ -2,6 +2,7 @@ package com.yield.barbershop_backend.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException.BadRequest;
 
 import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.PagedResponse;
@@ -14,6 +15,7 @@ import com.yield.barbershop_backend.model.Order;
 import com.yield.barbershop_backend.model.Order.OrderStatus;
 import com.yield.barbershop_backend.service.OrderService;
 
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -107,8 +109,26 @@ public class OrderController {
     }
 
     @PutMapping("{orderId}")
-    public ResponseEntity<ApiResponse<Void>> updateOrder(@PathVariable Long orderId, @RequestBody @Validated OrderUpdateDTO orderUpdateDTO) {
-        orderService.updateOrder(orderId, orderUpdateDTO);
+    public ResponseEntity<ApiResponse<Void>> updateOrder(@PathVariable Long orderId, @RequestBody @Validated OrderUpdateDTO orderUpdateDTO) throws BadRequestException {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        AccountPrincipal accountPrincipal = (AccountPrincipal) auth.getPrincipal();
+        Long ownerId = accountPrincipal.getId();
+
+
+        if(accountPrincipal.getAuthorities().stream().anyMatch(role -> role.toString().equals("[ROLE_CUSTOMER]"))) {
+            orderUpdateDTO.setCustomerId(accountPrincipal.getId());
+            orderService.updateOrder(orderId, orderUpdateDTO, false);
+        }
+        else {
+            // check if customer id is provided
+            if(orderUpdateDTO.getCustomerId() == null) {
+                throw new BadRequestException("Customer id is required");
+            }
+            orderService.updateOrder(orderId, orderUpdateDTO, true);
+        }
+    
         return ResponseEntity.noContent().build();        
     }
 
