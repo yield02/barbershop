@@ -858,7 +858,9 @@ public class OrderService {
         orderItems.forEach(orderItem -> {
             if (orderItem.getPromotionId() != null) {
                 Promotion promotion = promotionMap.get(orderItem.getPromotionId());
-                promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity() + orderItem.getQuantity());
+                promotion.setMaxApplicableQuantity(promotion.getMaxApplicableQuantity()
+                        + promotionService.calculateReturnMaxApplicableQuantity(orderItem.getOriginalPrice(),
+                                orderItem.getQuantity(), orderItem.getDiscountAmount(), promotion));
                 promotionMap.replace(orderItem.getPromotionId(), promotion);
             }
         });
