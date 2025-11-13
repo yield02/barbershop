@@ -51,7 +51,10 @@ public class PaymentSpecification {
         Date endDay = dates[1];
         Date startDayLastYear = Date.from(startDay.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().minusYears(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
         
-        return (root, query, cb) -> cb.between(root.get("paymentDate"), startDayLastYear, endDay);
+        return (root, query, cb) -> {
+            query.distinct(true);
+            return cb.between(root.get("paymentDate"), startDayLastYear, endDay);
+        };
     }
 
 }

@@ -94,19 +94,21 @@ public class ReportService {
             System.out.println("successPaymentPrevious: " + successPaymentPrevious);
             System.out.println("refundedPaymentPrevious: " + refundedPaymentPrevious);
 
-            Double netRevenuePrevious = successPaymentPrevious - refundedPaymentPrevious;
-            Double totalRevenue = successPaymentCurrent + refundedPaymentCurrent;
+            Double totalRevenueCurrent = successPaymentCurrent + refundedPaymentCurrent;
+            Double totalRevenuePrevious = successPaymentPrevious + refundedPaymentPrevious;
             Double netRevenue = successPaymentCurrent;
             Long totalTransactions = (Long) payments.stream().count();
             Double averageTransactionAmount = successPaymentCurrent / totalTransactions;
-            Double revenueGrowth = ((totalRevenue - netRevenuePrevious) / netRevenuePrevious) * 100;
+
+            Double revenueGrowth = ((totalRevenueCurrent - totalRevenuePrevious) / totalRevenuePrevious) * 100;
 
             OverviewRevenueDTO overviewRevenueDTO = new OverviewRevenueDTO();
-            overviewRevenueDTO.setTotalRevenue(totalRevenue);
+            overviewRevenueDTO.setTotalRevenue(totalRevenueCurrent);
             overviewRevenueDTO.setNetRevenue(netRevenue);
             overviewRevenueDTO.setTotalTransactions(totalTransactions);
             overviewRevenueDTO.setAverageTransactionAmount(averageTransactionAmount);
-            overviewRevenueDTO.setRevenueGrowth(revenueGrowth);
+            overviewRevenueDTO.setRevenueGrowthPercent(Math.round(revenueGrowth * Math.pow(10, 2))
+                 / Math.pow(10, 2));
 
             return overviewRevenueDTO;
 
@@ -148,20 +150,23 @@ public class ReportService {
 
 
 
-        Double netRevenuePrevious = successPaymentPreviousTotal - refundedPaymentPreviousTotal;
+        Double totalRevenuePrevious = successPaymentPreviousTotal + refundedPaymentPreviousTotal;
 
-        Double totalRevenue = successPaymentCurrentTotal + refundedPaymentCurrentTotal;
+        Double totalRevenueCurrent = successPaymentCurrentTotal + refundedPaymentCurrentTotal;
         Double netRevenue = successPaymentCurrentTotal;
         Long totalTransactions = Long.valueOf(successPaymentCurrent.size() + refundedPaymentCurrent.size());
         Double averageTransactionAmount = successPaymentCurrentTotal / totalTransactions;
-        Double revenueGrowth = ((totalRevenue - netRevenuePrevious) / netRevenuePrevious) * 100;
+        
+        Double revenueGrowth = ((totalRevenueCurrent - totalRevenuePrevious) / totalRevenuePrevious) * 100;
+
 
         OverviewRevenueDTO overviewRevenueDTO = new OverviewRevenueDTO();
-        overviewRevenueDTO.setTotalRevenue(totalRevenue);
+        overviewRevenueDTO.setTotalRevenue(totalRevenueCurrent);
         overviewRevenueDTO.setNetRevenue(netRevenue);
         overviewRevenueDTO.setTotalTransactions(totalTransactions);
         overviewRevenueDTO.setAverageTransactionAmount(averageTransactionAmount);
-        overviewRevenueDTO.setRevenueGrowth(revenueGrowth);
+        overviewRevenueDTO.setRevenueGrowthPercent(Math.round(revenueGrowth * Math.pow(10, 2))
+                 / Math.pow(10, 2));
 
         return overviewRevenueDTO;
     }
@@ -196,19 +201,21 @@ public class ReportService {
         Double successPaymentPreviousTotal = successPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
         Double refundedPaymentPreviousTotal = refundedPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
 
-        Double totalRevenue = successPaymentCurrentTotal + refundedPaymentCurrentTotal;
+        Double totalRevenueCurrent = successPaymentCurrentTotal + refundedPaymentCurrentTotal;
         Double netRevenue = successPaymentCurrentTotal;
         Long totalTransactions = Long.valueOf(successPaymentCurrent.size() + refundedPaymentCurrent.size());
         Double averageTransactionAmount = successPaymentCurrentTotal / totalTransactions;
-        Double netRevenuePrevious = successPaymentPreviousTotal - refundedPaymentPreviousTotal;
-        Double revenueGrowth = ((totalRevenue - netRevenuePrevious) / netRevenuePrevious) * 100;
+        Double totalRevenuePrevious = successPaymentPreviousTotal + refundedPaymentPreviousTotal;
+
+        Double revenueGrowth = ((totalRevenueCurrent - totalRevenuePrevious) / totalRevenuePrevious) * 100;
 
         OverviewRevenueDTO overviewRevenueDTO = new OverviewRevenueDTO();
-        overviewRevenueDTO.setTotalRevenue(totalRevenue);
+        overviewRevenueDTO.setTotalRevenue(totalRevenueCurrent);
         overviewRevenueDTO.setNetRevenue(netRevenue);
         overviewRevenueDTO.setTotalTransactions(totalTransactions);
         overviewRevenueDTO.setAverageTransactionAmount(averageTransactionAmount);
-        overviewRevenueDTO.setRevenueGrowth(revenueGrowth);
+        overviewRevenueDTO.setRevenueGrowthPercent(Math.round(revenueGrowth * Math.pow(10, 2))
+                 / Math.pow(10, 2));
 
         return overviewRevenueDTO;
     }
@@ -243,20 +250,23 @@ public class ReportService {
         Double successPaymentPreviousTotal = successPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
         Double refundedPaymentPreviousTotal = refundedPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
 
-        Double totalRevenue = successPaymentCurrentTotal + refundedPaymentCurrentTotal;
+
+        Double totalRevenueCurrent = successPaymentCurrentTotal + refundedPaymentCurrentTotal;
         Double netRevenue = successPaymentCurrentTotal;
         Long totalTransactions = Long.valueOf(successPaymentCurrent.size() + refundedPaymentCurrent.size());
         Double averageTransactionAmount = successPaymentCurrentTotal / totalTransactions;
-        Double netRevenuePrevious = successPaymentPreviousTotal - refundedPaymentPreviousTotal;
-        Double revenueGrowth = ((totalRevenue - netRevenuePrevious) / netRevenuePrevious) * 100;
+        Double totalRevenuePrevious = successPaymentPreviousTotal + refundedPaymentPreviousTotal;
+
+        Double revenueGrowth = ((totalRevenueCurrent - totalRevenuePrevious) / totalRevenuePrevious) * 100;
 
 
         OverviewRevenueDTO overviewRevenueDTO = new OverviewRevenueDTO();
-        overviewRevenueDTO.setTotalRevenue(totalRevenue);
+        overviewRevenueDTO.setTotalRevenue(totalRevenueCurrent);
         overviewRevenueDTO.setNetRevenue(netRevenue);
         overviewRevenueDTO.setTotalTransactions(totalTransactions);
         overviewRevenueDTO.setAverageTransactionAmount(averageTransactionAmount);
-        overviewRevenueDTO.setRevenueGrowth(revenueGrowth);
+        overviewRevenueDTO.setRevenueGrowthPercent(Math.round(revenueGrowth * Math.pow(10, 2))
+                 / Math.pow(10, 2));
         return overviewRevenueDTO;
     }
 

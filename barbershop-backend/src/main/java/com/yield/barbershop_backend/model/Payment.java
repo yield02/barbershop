@@ -8,6 +8,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -44,20 +45,20 @@ public class Payment {
     @Column(name = "order_id")
     Long orderId;
     
-    @ManyToOne(targetEntity = Customer.class)
+    @ManyToOne(targetEntity = Customer.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", insertable = false, updatable = false)
     Customer customer;
 
-    @ManyToOne(targetEntity = User.class)
+    @ManyToOne(targetEntity = User.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     User user;
 
-    @OneToOne(targetEntity = Appointment.class)
+    @OneToOne(targetEntity = Appointment.class, fetch = FetchType.LAZY)
     @JsonBackReference
     @JoinColumn(name = "appointment_id", insertable = false, updatable = false)
     Appointment appointment;
 
-    @OneToOne(targetEntity = Order.class)
+    @OneToOne(targetEntity = Order.class, fetch = FetchType.LAZY)
     @JsonBackReference
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
     Order order;

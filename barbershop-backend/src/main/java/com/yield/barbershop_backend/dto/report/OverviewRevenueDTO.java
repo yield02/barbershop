@@ -10,7 +10,7 @@ public class OverviewRevenueDTO {
     // Total revenue from all transactions
     private Double totalRevenue; 
 
-    // Tổng danh thu trừ đi các khoản giảm giá, hoàn tiền.
+    // Tổng doanh thu trừ đi các khoản giảm giá, hoàn tiền.
     // Total revenue after discounts and refunds
     private Double netRevenue;
 
@@ -24,6 +24,6 @@ public class OverviewRevenueDTO {
 
     // Biến động doanh thu = ((Doanh thu hiện tại - Doanh thu trước) / Doanh thu trước) * 100
     // Revenue growth
-    private Double revenueGrowth;
+    private Double revenueGrowthPercent;
 
 }
