@@ -13,16 +13,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.yield.barbershop_backend.dto.report.OverviewRevenueDTO;
+import com.yield.barbershop_backend.dto.report.ReportRevenueByCategoryDTO.ReportType;
 import com.yield.barbershop_backend.dto.report.CategoryRevenueDTO;
+import com.yield.barbershop_backend.model.Appointment;
 import com.yield.barbershop_backend.model.Order;
 import com.yield.barbershop_backend.model.OrderItem;
 import com.yield.barbershop_backend.model.Payment;
 import com.yield.barbershop_backend.model.Payment.PaymentStatus;
 import com.yield.barbershop_backend.specification.OrderSpecification;
 import com.yield.barbershop_backend.util.DateAndTimeUltil;
+import com.yield.barbershop_backend.util.NumberUtil;
 
 import jakarta.transaction.Transactional;
-
 
 @Service
 public class ReportService {
@@ -32,54 +34,67 @@ public class ReportService {
 
     @Autowired
     private OrderService orderService;
-    
+
+    @Autowired
+    private OrderItemService orderItemService;
+
+    @Autowired 
+    private AppointmentService appointmentService;
+
+    @Autowired 
+    private AppointmentServiceService appointmentServiceService;
+
+
     @Transactional
     public OverviewRevenueDTO getDateOverviewRevenue(Date date) {
 
         List<Payment> payments = paymentService.getPaymentCurrentAndPreviousDates(date);
-        
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
         CompletableFuture<Double> successPaymentCurrentFuture = CompletableFuture.supplyAsync(() -> {
             return payments.stream().mapToDouble(payment -> {
-               
-                    if (payment.getStatus().equals(Payment.PaymentStatus.Successful) && dateFormat.format(payment.getPaymentDate()).equals(dateFormat.format(date))) {
-                        return payment.getAmount();
-                    } else {
-                        return 0.0;
-                    }
-                }).sum();   
+
+                if (payment.getStatus().equals(Payment.PaymentStatus.Successful)
+                        && dateFormat.format(payment.getPaymentDate()).equals(dateFormat.format(date))) {
+                    return payment.getAmount();
+                } else {
+                    return 0.0;
+                }
+            }).sum();
         });
 
         CompletableFuture<Double> refundedPaymentCurrentFuture = CompletableFuture.supplyAsync(() -> {
             return payments.stream().mapToDouble(payment -> {
-                    if (payment.getStatus().equals(Payment.PaymentStatus.Refunded) && dateFormat.format(payment.getPaymentDate()).equals(dateFormat.format(date))) {
-                        return payment.getAmount();
-                    } else {
-                        return 0.0;
-                    }
-                }).sum();
+                if (payment.getStatus().equals(Payment.PaymentStatus.Refunded)
+                        && dateFormat.format(payment.getPaymentDate()).equals(dateFormat.format(date))) {
+                    return payment.getAmount();
+                } else {
+                    return 0.0;
+                }
+            }).sum();
         });
 
         CompletableFuture<Double> successPaymentPreviousFuture = CompletableFuture.supplyAsync(() -> {
             return payments.stream().mapToDouble(payment -> {
-                    if (payment.getStatus().equals(Payment.PaymentStatus.Successful) && payment.getPaymentDate().before(date)) {
-                        return payment.getAmount();
-                    } else {
-                        return 0.0;
-                    }
-                }).sum();
+                if (payment.getStatus().equals(Payment.PaymentStatus.Successful)
+                        && payment.getPaymentDate().before(date)) {
+                    return payment.getAmount();
+                } else {
+                    return 0.0;
+                }
+            }).sum();
         });
 
         CompletableFuture<Double> refundedPaymentPreviousFuture = CompletableFuture.supplyAsync(() -> {
             return payments.stream().mapToDouble(payment -> {
-                    if (payment.getStatus().equals(Payment.PaymentStatus.Refunded) && payment.getPaymentDate().before(date)) {
-                        return payment.getAmount();
-                    } else {
-                        return 0.0;
-                    }
-                }).sum();
+                if (payment.getStatus().equals(Payment.PaymentStatus.Refunded)
+                        && payment.getPaymentDate().before(date)) {
+                    return payment.getAmount();
+                } else {
+                    return 0.0;
+                }
+            }).sum();
         });
 
         try {
@@ -108,12 +123,11 @@ public class ReportService {
             overviewRevenueDTO.setTotalTransactions(totalTransactions);
             overviewRevenueDTO.setAverageTransactionAmount(averageTransactionAmount);
             overviewRevenueDTO.setRevenueGrowthPercent(Math.round(revenueGrowth * Math.pow(10, 2))
-                 / Math.pow(10, 2));
+                    / Math.pow(10, 2));
 
             return overviewRevenueDTO;
 
-        }
-        catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
@@ -132,23 +146,29 @@ public class ReportService {
         Date endDay = dates[1];
 
         payments.forEach(payment -> {
-            if (payment.getStatus().equals(Payment.PaymentStatus.Successful) && payment.getPaymentDate().after(startDay)) {
+            if (payment.getStatus().equals(Payment.PaymentStatus.Successful)
+                    && payment.getPaymentDate().after(startDay)) {
                 successPaymentCurrent.add(payment);
-            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded) && payment.getPaymentDate().after(startDay)) {
+            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded)
+                    && payment.getPaymentDate().after(startDay)) {
                 refundedPaymentCurrent.add(payment);
-            } else if (payment.getStatus().equals(Payment.PaymentStatus.Successful) && payment.getPaymentDate().before(startDay)) {
+            } else if (payment.getStatus().equals(Payment.PaymentStatus.Successful)
+                    && payment.getPaymentDate().before(startDay)) {
                 successPaymentPrevious.add(payment);
-            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded) && payment.getPaymentDate().before(startDay)) {
+            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded)
+                    && payment.getPaymentDate().before(startDay)) {
                 refundedPaymentPrevious.add(payment);
             }
         });
 
-        Double successPaymentCurrentTotal = successPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount).sum();
-        Double refundedPaymentCurrentTotal = refundedPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount).sum();
-        Double successPaymentPreviousTotal = successPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
-        Double refundedPaymentPreviousTotal = refundedPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
-
-
+        Double successPaymentCurrentTotal = successPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
+        Double refundedPaymentCurrentTotal = refundedPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
+        Double successPaymentPreviousTotal = successPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
+        Double refundedPaymentPreviousTotal = refundedPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
 
         Double totalRevenuePrevious = successPaymentPreviousTotal + refundedPaymentPreviousTotal;
 
@@ -156,9 +176,8 @@ public class ReportService {
         Double netRevenue = successPaymentCurrentTotal;
         Long totalTransactions = Long.valueOf(successPaymentCurrent.size() + refundedPaymentCurrent.size());
         Double averageTransactionAmount = successPaymentCurrentTotal / totalTransactions;
-        
-        Double revenueGrowth = ((totalRevenueCurrent - totalRevenuePrevious) / totalRevenuePrevious) * 100;
 
+        Double revenueGrowth = ((totalRevenueCurrent - totalRevenuePrevious) / totalRevenuePrevious) * 100;
 
         OverviewRevenueDTO overviewRevenueDTO = new OverviewRevenueDTO();
         overviewRevenueDTO.setTotalRevenue(totalRevenueCurrent);
@@ -166,7 +185,7 @@ public class ReportService {
         overviewRevenueDTO.setTotalTransactions(totalTransactions);
         overviewRevenueDTO.setAverageTransactionAmount(averageTransactionAmount);
         overviewRevenueDTO.setRevenueGrowthPercent(Math.round(revenueGrowth * Math.pow(10, 2))
-                 / Math.pow(10, 2));
+                / Math.pow(10, 2));
 
         return overviewRevenueDTO;
     }
@@ -174,7 +193,6 @@ public class ReportService {
     public OverviewRevenueDTO getMonthOverviewRevenue(Date date) {
 
         List<Payment> payments = paymentService.getPaymentCurrentAndPreviousMonth(date);
-
 
         List<Payment> successPaymentCurrent = new ArrayList<>();
         List<Payment> refundedPaymentCurrent = new ArrayList<>();
@@ -185,21 +203,29 @@ public class ReportService {
         Date startDay = dates[0];
 
         payments.forEach(payment -> {
-            if(payment.getStatus().equals(Payment.PaymentStatus.Successful) && payment.getPaymentDate().after(startDay)) {
+            if (payment.getStatus().equals(Payment.PaymentStatus.Successful)
+                    && payment.getPaymentDate().after(startDay)) {
                 successPaymentCurrent.add(payment);
-            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded) && payment.getPaymentDate().after(startDay)) {
+            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded)
+                    && payment.getPaymentDate().after(startDay)) {
                 refundedPaymentCurrent.add(payment);
-            } else if (payment.getStatus().equals(Payment.PaymentStatus.Successful) && payment.getPaymentDate().before(startDay)) {
+            } else if (payment.getStatus().equals(Payment.PaymentStatus.Successful)
+                    && payment.getPaymentDate().before(startDay)) {
                 successPaymentPrevious.add(payment);
-            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded) && payment.getPaymentDate().before(startDay)) {
+            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded)
+                    && payment.getPaymentDate().before(startDay)) {
                 refundedPaymentPrevious.add(payment);
             }
         });
 
-        Double successPaymentCurrentTotal = successPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount).sum();
-        Double refundedPaymentCurrentTotal = refundedPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount).sum();
-        Double successPaymentPreviousTotal = successPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
-        Double refundedPaymentPreviousTotal = refundedPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
+        Double successPaymentCurrentTotal = successPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
+        Double refundedPaymentCurrentTotal = refundedPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
+        Double successPaymentPreviousTotal = successPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
+        Double refundedPaymentPreviousTotal = refundedPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
 
         Double totalRevenueCurrent = successPaymentCurrentTotal + refundedPaymentCurrentTotal;
         Double netRevenue = successPaymentCurrentTotal;
@@ -215,7 +241,7 @@ public class ReportService {
         overviewRevenueDTO.setTotalTransactions(totalTransactions);
         overviewRevenueDTO.setAverageTransactionAmount(averageTransactionAmount);
         overviewRevenueDTO.setRevenueGrowthPercent(Math.round(revenueGrowth * Math.pow(10, 2))
-                 / Math.pow(10, 2));
+                / Math.pow(10, 2));
 
         return overviewRevenueDTO;
     }
@@ -229,27 +255,33 @@ public class ReportService {
         List<Payment> successPaymentPrevious = new ArrayList<>();
         List<Payment> refundedPaymentPrevious = new ArrayList<>();
 
-
         Date[] dates = new DateAndTimeUltil().getYearStartEnd(date);
         Date startDay = dates[0];
 
         payments.forEach(payment -> {
-            if(payment.getStatus().equals(Payment.PaymentStatus.Successful) && payment.getPaymentDate().after(startDay)) {
+            if (payment.getStatus().equals(Payment.PaymentStatus.Successful)
+                    && payment.getPaymentDate().after(startDay)) {
                 successPaymentCurrent.add(payment);
-            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded) && payment.getPaymentDate().after(startDay)) {
+            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded)
+                    && payment.getPaymentDate().after(startDay)) {
                 refundedPaymentCurrent.add(payment);
-            } else if (payment.getStatus().equals(Payment.PaymentStatus.Successful) && payment.getPaymentDate().before(startDay)) {
+            } else if (payment.getStatus().equals(Payment.PaymentStatus.Successful)
+                    && payment.getPaymentDate().before(startDay)) {
                 successPaymentPrevious.add(payment);
-            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded) && payment.getPaymentDate().before(startDay)) {
+            } else if (payment.getStatus().equals(Payment.PaymentStatus.Refunded)
+                    && payment.getPaymentDate().before(startDay)) {
                 refundedPaymentPrevious.add(payment);
             }
         });
 
-        Double successPaymentCurrentTotal = successPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount).sum();
-        Double refundedPaymentCurrentTotal = refundedPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount).sum();
-        Double successPaymentPreviousTotal = successPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
-        Double refundedPaymentPreviousTotal = refundedPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount).sum();
-
+        Double successPaymentCurrentTotal = successPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
+        Double refundedPaymentCurrentTotal = refundedPaymentCurrent.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
+        Double successPaymentPreviousTotal = successPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
+        Double refundedPaymentPreviousTotal = refundedPaymentPrevious.parallelStream().mapToDouble(Payment::getAmount)
+                .sum();
 
         Double totalRevenueCurrent = successPaymentCurrentTotal + refundedPaymentCurrentTotal;
         Double netRevenue = successPaymentCurrentTotal;
@@ -259,38 +291,129 @@ public class ReportService {
 
         Double revenueGrowth = ((totalRevenueCurrent - totalRevenuePrevious) / totalRevenuePrevious) * 100;
 
-
         OverviewRevenueDTO overviewRevenueDTO = new OverviewRevenueDTO();
         overviewRevenueDTO.setTotalRevenue(totalRevenueCurrent);
         overviewRevenueDTO.setNetRevenue(netRevenue);
         overviewRevenueDTO.setTotalTransactions(totalTransactions);
         overviewRevenueDTO.setAverageTransactionAmount(averageTransactionAmount);
         overviewRevenueDTO.setRevenueGrowthPercent(Math.round(revenueGrowth * Math.pow(10, 2))
-                 / Math.pow(10, 2));
+                / Math.pow(10, 2));
         return overviewRevenueDTO;
     }
 
+    public List<CategoryRevenueDTO> getRevenueByCategory(Date startDate, Date endDate) {
 
+        List<Payment> payments = paymentService.getPaymentBetweenTwoDates(startDate, endDate);
 
-    // public CategoryRevenueDTO getRevenueByCategory(Date startDate, Date endDate) {
+        Double totalNetRevenue = payments.parallelStream().mapToDouble(Payment::getAmount).sum();
 
+        // At this, we can combine calculate product revenue and drink revenue because both of them have to get all orders in the same time.
+        CompletableFuture<CategoryRevenueDTO> productRevenueFuture = CompletableFuture.supplyAsync(() ->
+            getProductRevenue(startDate, endDate, totalNetRevenue)
+        );
 
-
-    //     List<Order> orders = orderService.getOrdersWithSpecification(OrderSpecification.getOrderSuccessAndDateBetween(startDate, endDate));
-
-    //     List<OrderItem> drinkItems = orders.parallelStream()
-    //         .filter(order -> order.getPayment().getStatus().equals(Payment.PaymentStatus.Successful))
-    //         .flatMap(order -> order.getOrderItems().stream()).filter(item -> item.getDrinkId() != null)
-    //         .collect(Collectors.toList());
-    //     List<OrderItem> productItems = orders.parallelStream()
-    //         .filter(order -> order.getPayment().getStatus().equals(Payment.PaymentStatus.Successful))
-    //         .flatMap(order -> order.getOrderItems().stream()).filter(item -> item.getProductId() != null)
-    //         .collect(Collectors.toList());
         
-    //     Double netDrinkRevenue = drinkItems.parallelStream().mapToDouble(OrderItem::getPrice).sum();
-    //     Double netProductRevenue = productItems.parallelStream().mapToDouble(OrderItem::getPrice).sum();
-        
+        CompletableFuture<CategoryRevenueDTO> drinkRevenueFuture = CompletableFuture.supplyAsync(() ->
+            getDrinkRevenue(startDate, endDate, totalNetRevenue)
+        );
 
-    //     return null;
-    // }
+        CompletableFuture<CategoryRevenueDTO> serviceRevenueFuture = CompletableFuture.supplyAsync(() ->
+            getServiceRevenue(startDate, endDate, totalNetRevenue)
+        );
+
+
+        // Chờ tất cả kết quả
+        try {
+            CategoryRevenueDTO productRevenue = productRevenueFuture.get();
+            CategoryRevenueDTO serviceRevenue = serviceRevenueFuture.get();
+            CategoryRevenueDTO drinkRevenue = drinkRevenueFuture.get();
+
+            List<CategoryRevenueDTO> categoryRevenueDTOS = new ArrayList<>();
+            categoryRevenueDTOS.add(productRevenue);
+            categoryRevenueDTOS.add(serviceRevenue);
+            categoryRevenueDTOS.add(drinkRevenue);
+
+            return categoryRevenueDTOS;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Error calculating revenue by category", e);
+        }
+    }
+
+    private CategoryRevenueDTO getProductRevenue(Date startDate, Date endDate, Double totalNetRevenue) {
+        
+        List<Order> orders = orderService.getOrdersCompletedBetweenTwoDates(startDate, endDate);
+        List<Long> orderIds = orders.stream().map(Order::getOrderId).collect(Collectors.toList());
+        List<OrderItem> orderItems = orderItemService.getOrderItemsByOrderIds(orderIds);
+
+        List<OrderItem> orderProductItems = orderItems.stream()
+                .filter(orderItem -> orderItem.getProductId() != null)
+                .collect(Collectors.toList());
+
+        Double totalProductNetRevenue = 0.0;
+        Double totalProductRevenue = 0.0;
+
+        for (OrderItem orderProductItem : orderProductItems) {
+            totalProductRevenue += orderProductItem.getOriginalPrice();
+            totalProductNetRevenue += orderProductItem.getFinalPrice();
+        }
+
+        CategoryRevenueDTO categoryRevenueDTO = new CategoryRevenueDTO();
+        categoryRevenueDTO.setCategory("Product");
+        categoryRevenueDTO.setTotalRevenue(totalProductRevenue);
+        categoryRevenueDTO.setNetRevenue(totalProductNetRevenue);
+        categoryRevenueDTO.setPercentageOfTotalNetRevenue(NumberUtil.round((totalProductNetRevenue / totalNetRevenue) * 100, 2));
+
+        return categoryRevenueDTO;
+    }
+
+    private CategoryRevenueDTO getServiceRevenue(Date startDate, Date endDate, Double totalNetRevenue) {
+
+        List<Appointment> appointments = appointmentService.getCompletedAppointmentsBetweenTwoDates(startDate, endDate);
+        List<Long> appointmentIds = appointments.stream().map(Appointment::getAppointmentId).collect(Collectors.toList());
+
+        List<com.yield.barbershop_backend.model.AppointmentService> appointmentServices = appointmentServiceService.getAllAppointmentsByAppointmentIds(appointmentIds);
+
+        Double totalServiceNetRevenue = 0.0;
+        Double totalServiceRevenue = 0.0;
+
+        for (com.yield.barbershop_backend.model.AppointmentService appointmentService : appointmentServices) {
+            totalServiceRevenue += appointmentService.getOriginalPrice();
+            totalServiceNetRevenue += appointmentService.getFinalPrice();
+        }
+
+        CategoryRevenueDTO categoryRevenueDTO = new CategoryRevenueDTO();
+        categoryRevenueDTO.setCategory("Service");
+        categoryRevenueDTO.setTotalRevenue(totalServiceRevenue);
+        categoryRevenueDTO.setNetRevenue(totalServiceNetRevenue);
+        categoryRevenueDTO.setPercentageOfTotalNetRevenue(NumberUtil.round((totalServiceNetRevenue / totalNetRevenue) * 100, 2));
+        return categoryRevenueDTO;
+    }
+
+    private CategoryRevenueDTO getDrinkRevenue(Date startDate, Date endDate, Double totalNetRevenue) {
+        
+        List<Order> orders = orderService.getOrdersCompletedBetweenTwoDates(startDate, endDate);
+        List<Long> orderIds = orders.stream().map(Order::getOrderId).collect(Collectors.toList());
+        List<OrderItem> orderItems = orderItemService.getOrderItemsByOrderIds(orderIds);
+
+        List<OrderItem> orderDrinkItems = orderItems.stream()
+                .filter(orderItem -> orderItem.getDrinkId() != null)
+                .collect(Collectors.toList());
+
+        Double totalDrinkNetRevenue = 0.0;
+        Double totalDrinkRevenue = 0.0;
+
+        for (OrderItem orderDrinkItem : orderDrinkItems) {
+            totalDrinkRevenue += orderDrinkItem.getOriginalPrice();
+            totalDrinkNetRevenue += orderDrinkItem.getFinalPrice();
+        }
+
+        CategoryRevenueDTO categoryRevenueDTO = new CategoryRevenueDTO();
+        categoryRevenueDTO.setCategory("Drink");
+        categoryRevenueDTO.setTotalRevenue(totalDrinkRevenue);
+        categoryRevenueDTO.setNetRevenue(totalDrinkNetRevenue);
+        categoryRevenueDTO.setPercentageOfTotalNetRevenue(NumberUtil.round((totalDrinkNetRevenue / totalNetRevenue) * 100, 2));
+        
+        return categoryRevenueDTO;
+    }
+
 }

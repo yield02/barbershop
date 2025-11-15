@@ -17,6 +17,11 @@ public class PaymentService {
     @Autowired
     private PaymentRepo paymentRepo;
 
+
+    public List<Payment> getPaymentBetweenTwoDates(Date startDate, Date endDate) {
+        return paymentRepo.findAll(PaymentSpecification.getPaymentBetweenTwoDates(startDate, endDate));
+    }
+
     public List<Payment> getPaymentCurrentAndPreviousDates(Date date) {
         return paymentRepo.findAll(PaymentSpecification.getPaymentCurrentAndPreviousDates(date));
     }

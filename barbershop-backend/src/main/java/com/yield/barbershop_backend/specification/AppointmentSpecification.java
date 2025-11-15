@@ -3,6 +3,7 @@ package com.yield.barbershop_backend.specification;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.jpa.domain.Specification;
@@ -48,6 +49,21 @@ public class AppointmentSpecification {
                 criteriaBuilder.notEqual(root.get("status"), "Cancelled")
             );
             return criteriaBuilder.and(timeConflict);
+        };
+    }
+
+    public static Specification<Appointment> getCompletedAppointmentsBetweenTwoDates(Date startDate, Date endDate) {
+        return (root, query, criteriaBuilder) -> {
+
+            query.distinct(true);
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(criteriaBuilder.equal(root.get("status"), "Completed"));
+            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startDate));
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), endDate));
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
 

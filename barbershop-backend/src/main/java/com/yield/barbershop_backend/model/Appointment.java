@@ -34,6 +34,7 @@ public class Appointment {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
+    // Pending|Confirmed|Completed|Cancelled
     private String status;
 
       

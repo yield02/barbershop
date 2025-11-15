@@ -9,16 +9,17 @@ import org.springframework.transaction.annotation.Transactional;
 import com.yield.barbershop_backend.exception.DataConflictException;
 import com.yield.barbershop_backend.model.OrderItem;
 import com.yield.barbershop_backend.repository.OrderItemRepo;
+import com.yield.barbershop_backend.specification.OrderItemSpecification;
 
 @Service
 public class OrderItemService {
-    
+
     @Autowired
     OrderItemRepo orderItemRepo;
 
     @Transactional
     public List<OrderItem> createOrderItems(List<OrderItem> orderItems) {
-        List <OrderItem> savedOrderItems = orderItemRepo.saveAll(orderItems);
+        List<OrderItem> savedOrderItems = orderItemRepo.saveAll(orderItems);
         return savedOrderItems;
     }
 
@@ -29,5 +30,9 @@ public class OrderItemService {
 
     public void deleteOrderItemsByOrderId(Long orderId) {
         orderItemRepo.deleteAllByOrderId(orderId);
+    }
+
+    public List<OrderItem> getOrderItemsByOrderIds(List<Long> orderIds) {
+        return orderItemRepo.findAll(OrderItemSpecification.getOrderItemsByOrderIds(orderIds));
     }
 }

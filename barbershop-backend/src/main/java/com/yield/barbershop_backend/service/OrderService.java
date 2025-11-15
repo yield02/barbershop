@@ -869,4 +869,8 @@ public class OrderService {
         // 5.[Return MaxApplicableQuantity Promotions] End
 
     }
+
+    public List<Order> getOrdersCompletedBetweenTwoDates(java.util.Date startDate, java.util.Date endDate) {
+        return orderRepo.findAll(OrderSpecification.getOrderSuccessAndDateBetween(startDate, endDate));
+    }
 }

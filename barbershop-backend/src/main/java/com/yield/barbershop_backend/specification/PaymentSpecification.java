@@ -57,4 +57,8 @@ public class PaymentSpecification {
         };
     }
 
+    public static Specification<Payment> getPaymentBetweenTwoDates(Date startDate, Date endDate) {
+        return (root, query, cb) -> cb.between(root.get("paymentDate"), startDate, endDate);
+    }
+
 }

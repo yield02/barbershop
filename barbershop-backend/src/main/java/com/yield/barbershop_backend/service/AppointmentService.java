@@ -497,4 +497,8 @@ public class AppointmentService {
         appointmentRepo.save(appointment);
     }
 
+    public List<Appointment> getCompletedAppointmentsBetweenTwoDates(Date startDate, Date endDate) {
+        return appointmentRepo.findAll(AppointmentSpecification.getCompletedAppointmentsBetweenTwoDates(startDate, endDate));
+    }
+
 }

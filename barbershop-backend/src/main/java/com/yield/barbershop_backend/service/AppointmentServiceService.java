@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.yield.barbershop_backend.model.AppointmentService;
 import com.yield.barbershop_backend.repository.AppointmentServiceRepo;
+import com.yield.barbershop_backend.specification.AppointmentServiceSpecification;
 
 @Service
 public class AppointmentServiceService {
@@ -18,6 +19,10 @@ public class AppointmentServiceService {
     // public List<com.yield.barbershop_backend.model.AppointmentService> getAllAppointments() {
     //     return appointmentServiceRepo.saveAll(null)
     // }
+
+    public List<AppointmentService> getAllAppointmentsByAppointmentIds(List<Long> appointmentIds) {
+        return appointmentServiceRepo.findAll(AppointmentServiceSpecification.getAppointmentsByAppointmentIds(appointmentIds));
+    }
 
     public void deleteAppointmentServicesByAppointmentId(Long appointmentId) {
         appointmentServiceRepo.deleteAllByAppointmentId(appointmentId);
