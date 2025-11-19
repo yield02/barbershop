@@ -2,6 +2,8 @@ package com.yield.barbershop_backend.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -139,6 +141,10 @@ public class UserService {
             throw new DataNotFoundException("Verification token is incorrect");
         }
 
+    }
+
+    public List<User> getUserByIds(Set<Long> userIds) {
+        return userRepo.findAllById(userIds);
     }
 
 }

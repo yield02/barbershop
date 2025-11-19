@@ -501,4 +501,8 @@ public class AppointmentService {
         return appointmentRepo.findAll(AppointmentSpecification.getCompletedAppointmentsBetweenTwoDates(startDate, endDate));
     }
 
+    public List<Appointment> getCompletedAppointmentsBetweenTwoDatesByStartTime(Date startDateObj, Date endDateObj) {
+        return appointmentRepo.findAll(AppointmentSpecification.getCompletedAppointmentsBetweenTwoDatesByStartTime(startDateObj, endDateObj));
+    }
+
 }

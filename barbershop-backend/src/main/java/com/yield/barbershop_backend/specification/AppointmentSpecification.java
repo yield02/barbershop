@@ -40,14 +40,14 @@ public class AppointmentSpecification {
         };
     }
 
-    public static Specification<Appointment> checkAppointmentsConflict(LocalDateTime startTime, LocalDateTime endTime, Long userId) {
+    public static Specification<Appointment> checkAppointmentsConflict(LocalDateTime startTime, LocalDateTime endTime,
+            Long userId) {
         return (root, query, criteriaBuilder) -> {
             Predicate timeConflict = criteriaBuilder.and(
-                criteriaBuilder.greaterThan(root.get("endTime"), startTime),
-                criteriaBuilder.lessThan(root.get("startTime"), endTime),
-                criteriaBuilder.equal(root.get("userId"), userId),
-                criteriaBuilder.notEqual(root.get("status"), "Cancelled")
-            );
+                    criteriaBuilder.greaterThan(root.get("endTime"), startTime),
+                    criteriaBuilder.lessThan(root.get("startTime"), endTime),
+                    criteriaBuilder.equal(root.get("userId"), userId),
+                    criteriaBuilder.notEqual(root.get("status"), "Cancelled"));
             return criteriaBuilder.and(timeConflict);
         };
     }
@@ -65,6 +65,24 @@ public class AppointmentSpecification {
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    public static Specification<Appointment> getCompletedAppointmentsBetweenTwoDatesByStartTime(Date startDate,
+            Date endDate) {
+
+        return (root, query, criteriaBuilder) -> {
+
+            query.distinct(true);
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(criteriaBuilder.equal(root.get("status"), "Completed"));
+            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startTime"), startDate));
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("startTime"), endDate));
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
     }
 
 }

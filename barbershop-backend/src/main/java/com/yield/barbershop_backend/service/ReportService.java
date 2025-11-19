@@ -4,6 +4,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -14,11 +16,13 @@ import org.springframework.stereotype.Service;
 
 import com.yield.barbershop_backend.dto.report.OverviewRevenueDTO;
 import com.yield.barbershop_backend.dto.report.ReportRevenueByCategoryDTO.ReportType;
+import com.yield.barbershop_backend.dto.report.BarberRevenueDTO;
 import com.yield.barbershop_backend.dto.report.CategoryRevenueDTO;
 import com.yield.barbershop_backend.model.Appointment;
 import com.yield.barbershop_backend.model.Order;
 import com.yield.barbershop_backend.model.OrderItem;
 import com.yield.barbershop_backend.model.Payment;
+import com.yield.barbershop_backend.model.User;
 import com.yield.barbershop_backend.model.Payment.PaymentStatus;
 import com.yield.barbershop_backend.specification.OrderSpecification;
 import com.yield.barbershop_backend.util.DateAndTimeUltil;
@@ -43,6 +47,9 @@ public class ReportService {
 
     @Autowired 
     private AppointmentServiceService appointmentServiceService;
+
+    @Autowired
+    private UserService userService;
 
 
     @Transactional
@@ -414,6 +421,42 @@ public class ReportService {
         categoryRevenueDTO.setPercentageOfTotalNetRevenue(NumberUtil.round((totalDrinkNetRevenue / totalNetRevenue) * 100, 2));
         
         return categoryRevenueDTO;
+    }
+
+    public List<BarberRevenueDTO> getRevenueByBarber(Date startDateObj, Date endDateObj) {
+
+        List<BarberRevenueDTO> barberRevenueDTOS = new ArrayList<>();
+
+        List<Appointment> appointments = appointmentService.getCompletedAppointmentsBetweenTwoDatesByStartTime(startDateObj, endDateObj);
+        // <userId, List<Appointment>>
+        Map<Long, List<Appointment>> barberAppointments = appointments.stream().collect(Collectors.groupingBy(Appointment::getUserId));
+
+        Double totalNetRevenue = appointments.parallelStream().mapToDouble(Appointment::getTotalAmount).sum();
+
+        Set<Long> userIds = appointments.stream().map(Appointment::getUserId).collect(Collectors.toSet());
+        
+        Map<Long, User> users = userService.getUserByIds(userIds).stream().collect(Collectors.toMap(User::getUserId, user -> user));
+
+        for (Long userId : userIds) {
+            List<Appointment> userAppointments = barberAppointments.get(userId);
+
+            Double totalUserNetRevenue = userAppointments.parallelStream().mapToDouble(Appointment::getTotalAmount).sum();
+            User user = users.get(userId);
+            
+            if(user != null) {
+                BarberRevenueDTO barberRevenueDTO = new BarberRevenueDTO();
+                barberRevenueDTO.setUserId(userId);
+                barberRevenueDTO.setFullName(user.getFullName());
+                barberRevenueDTO.setRole(user.getRole());
+                barberRevenueDTO.setTotalNetRevenue(totalUserNetRevenue);
+                barberRevenueDTO.setTotalAppointment(userAppointments.size());
+                barberRevenueDTO.setPercentageOfTotalNetRevenue(NumberUtil.round((totalUserNetRevenue / totalNetRevenue) * 100, 2));
+                barberRevenueDTOS.add(barberRevenueDTO);
+            }
+        }
+
+
+        return barberRevenueDTOS;
     }
 
 }
