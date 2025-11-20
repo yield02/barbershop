@@ -3,6 +3,7 @@ package com.yield.barbershop_backend.service;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import com.yield.barbershop_backend.dto.report.OverviewRevenueDTO;
 import com.yield.barbershop_backend.dto.report.ReportRevenueByCategoryDTO.ReportType;
+import com.yield.barbershop_backend.dto.report.ReportRevenueByCustomer.TotalVisit;
+import com.yield.barbershop_backend.dto.report.ReportRevenueByCustomer;
 import com.yield.barbershop_backend.dto.report.BarberRevenueDTO;
 import com.yield.barbershop_backend.dto.report.CategoryRevenueDTO;
 import com.yield.barbershop_backend.model.Appointment;
@@ -457,6 +460,49 @@ public class ReportService {
 
 
         return barberRevenueDTOS;
+    }
+
+    public List<ReportRevenueByCustomer> getRevenueByCustomers(Date startDateObj, Date endDateObj) {
+
+        List<Order> orders = orderService.getOrdersCompletedBetweenTwoDates(startDateObj, endDateObj);
+        List<Appointment> appointments = appointmentService.getCompletedAppointmentsBetweenTwoDates(startDateObj, endDateObj);
+
+        // <customerId, Order>
+        Map<Long, List<Order>> orderMapByCustomerId = orders.stream().collect(Collectors.groupingBy(Order::getCustomerId));
+        // <customerId, Appointment>
+        Map<Long, List<Appointment>> appointmentMapByCustomerId = appointments.stream().collect(Collectors.groupingBy(Appointment::getCustomerId));
+        Set<Long> customerIdsSet = new HashSet<>();
+        customerIdsSet.addAll(orderMapByCustomerId.keySet());
+        customerIdsSet.addAll(appointmentMapByCustomerId.keySet());
+
+        Map<Long, User> users = userService.getUserByIds(customerIdsSet).stream().collect(Collectors.toMap(User::getUserId, user -> user));
+
+        List<ReportRevenueByCustomer> reportRevenueByCustomers = new ArrayList<>();
+
+        for (Long customerId : customerIdsSet) {
+            User user = users.get(customerId);
+            List<Appointment> appointmentsByCustomerId = appointmentMapByCustomerId.get(customerId);
+            List<Order> ordersByCustomerId = orderMapByCustomerId.get(customerId);
+            
+            Double totalNetRevenueOfAppointments = appointmentsByCustomerId != null ? appointmentsByCustomerId.stream().mapToDouble(Appointment::getTotalAmount).sum() : 0.0;
+            Double totalNetRevenueOfOrders = ordersByCustomerId != null ? ordersByCustomerId.stream().mapToDouble(Order::getTotalAmount).sum() : 0.0;
+            Double totalNetRevenue = totalNetRevenueOfAppointments + totalNetRevenueOfOrders;
+
+            Long totalAppointments = appointmentsByCustomerId != null ? appointmentsByCustomerId.size() * 1L : 0L;
+            Long totalOrders = ordersByCustomerId != null ? ordersByCustomerId.size() * 1L : 0L;
+
+            if (user != null) {
+                ReportRevenueByCustomer reportRevenueByCustomer = new ReportRevenueByCustomer();
+                reportRevenueByCustomer.setCustomerId(customerId);
+                reportRevenueByCustomer.setCustomerName(user.getFullName());
+                reportRevenueByCustomer.setCustomerPhone(user.getPhoneNumber());
+                reportRevenueByCustomer.setCustomerEmail(user.getEmail());
+                reportRevenueByCustomer.setTotalNetRevenue(totalNetRevenue);
+                reportRevenueByCustomer.setTotalVisit(new TotalVisit(totalAppointments, totalOrders));
+                reportRevenueByCustomers.add(reportRevenueByCustomer);
+            }
+        }
+        return reportRevenueByCustomers;
     }
 
 }

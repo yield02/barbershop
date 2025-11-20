@@ -7,7 +7,7 @@ import com.yield.barbershop_backend.dto.ApiResponse;
 import com.yield.barbershop_backend.dto.report.BarberRevenueDTO;
 import com.yield.barbershop_backend.dto.report.CategoryRevenueDTO;
 import com.yield.barbershop_backend.dto.report.OverviewRevenueDTO;
-import com.yield.barbershop_backend.dto.report.ReportRevenueDTO;
+import com.yield.barbershop_backend.dto.report.ReportRevenueByCustomer;
 import com.yield.barbershop_backend.service.ReportService;
 
 import java.text.DateFormat;
@@ -90,6 +90,24 @@ public class ReportController {
         List<BarberRevenueDTO> reportRevenueDTOS = reportService.getRevenueByBarber(startDateObj, endDateObj);
         return ResponseEntity.ok(new ApiResponse<>(true, "", reportRevenueDTOS));
     }
+
+    @GetMapping("/revenue-by-customer")
+    public ResponseEntity<ApiResponse<List<ReportRevenueByCustomer>>> getRevenueByCustomers(@RequestParam String startDate, @RequestParam String endDate) throws BadRequestException {
+
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date startDateObj = null, endDateObj = null;
+        try {
+            startDateObj = dateFormat.parse(startDate);
+            endDateObj = dateFormat.parse(endDate);
+        } catch (ParseException e) {
+            throw new BadRequestException("Invalid date format");
+        }
+
+        List<ReportRevenueByCustomer> reportRevenueByCustomers = reportService.getRevenueByCustomers(startDateObj, endDateObj);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "", reportRevenueByCustomers));
+    }
+    
     
     
     
